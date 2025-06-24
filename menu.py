@@ -2,7 +2,7 @@ import pygame
 from utils import dibujar_texto, get_font # Importar funciones auxiliares y get_font
 
 # --- Menú Principal ---
-def main_menu(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_titulo, fuente_boton, color_fondo, color_texto_normal, color_opcion_seleccionada, color_borde):
+def main_menu(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_titulo, fuente_boton, color_fondo, color_texto_normal, color_extra_unused_1, color_opcion_seleccionada, color_extra_unused_2):
     """
     Muestra el menú principal y maneja la interacción con los botones.
     Retorna la acción seleccionada ('jugar', 'ranking', 'creditos', 'salir').
@@ -12,11 +12,12 @@ def main_menu(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_titulo, fuente_bot
     ANCHO_PANTALLA, ALTO_PANTALLA: Dimensiones de la pantalla.
     fuente_titulo, fuente_boton: Objetos de fuente Pygame para el título y los botones.
     color_fondo: Color de fondo del menú.
-    color_texto_normal: Color del texto de las opciones no seleccionadas (ej. NEGRO).
-    color_opcion_seleccionada: Color del texto de la opción actualmente seleccionada (ej. AZUL/VERDE).
-    color_borde: Color para bordes o resaltados (no usado directamente en este menú de texto, pero útil si se agregan más visuales).
+    color_texto_normal: Color del texto de las opciones no seleccionadas (ej. BLANCO).
+    color_extra_unused_1: Argumento adicional pasado desde main.py, no usado directamente en el menú de texto actual.
+    color_opcion_seleccionada: Color del texto de la opción actualmente seleccionada (ej. VERDE).
+    color_extra_unused_2: Argumento adicional pasado desde main.py, no usado directamente en el menú de texto actual.
     """
-    # Opciones del menú directamente en la función
+    # Opciones del menú
     opciones = ["Jugar", "Ver Ranking", "Créditos", "Salir"]
     opcion_seleccionada = 0 # Índice de la opción actualmente seleccionada
 
