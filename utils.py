@@ -40,7 +40,9 @@ SCORES_FILE = os.path.join(BASE_DIR, 'datos', 'puntajes.json')
 def load_scores():
     """
     Carga los puntajes desde el archivo JSON.
-    Si el archivo no existe o está vacío, devuelve una lista vacía.
+    Si el archivo no existe, devuelve una lista vacía.
+    Si el archivo existe pero su contenido no es un JSON válido o no es una lista,
+    el programa podría detenerse (ya que no se usan try/except).
     """
     if not os.path.exists(SCORES_FILE):
         return []
@@ -64,14 +66,14 @@ def save_scores(scores):
     for s in scores:
         scores_a_ordenar.append(s) # Copiar la lista
 
-    # Algoritmo de burbuja para ordenar la lista sin sorted() ni list comprehension
+    # Algoritmo de burbuja para ordenar la lista
     n = len(scores_a_ordenar)
     for i in range(n - 1):
         for j in range(0, n - i - 1):
             if scores_a_ordenar[j]['puntaje'] < scores_a_ordenar[j+1]['puntaje']:
                 scores_a_ordenar[j], scores_a_ordenar[j+1] = scores_a_ordenar[j+1], scores_a_ordenar[j]
     
-    # Tomar los 5 mejores puntajes sin list comprehension
+    # Tomar los 5 mejores puntajes
     top_5_scores = []
     count = 0
     for score in scores_a_ordenar:

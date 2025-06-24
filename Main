@@ -21,14 +21,14 @@ BLANCO = (255, 255, 255)
 NEGRO = (0, 0, 0)
 GRIS = (200, 200, 200)
 ROJO = (255, 0, 0)
-VERDE = (0, 255, 0)
-AZUL = (0, 0, 255)
+VERDE = (0, 255, 0) # Usado para "Dash Listo"
+AZUL = (0, 0, 255) # Usado para el jugador
 
 # --- Fuentes ---
 # pygame.font.Font(None, tamaño) crea una fuente por defecto de Pygame
 FUENTE_GRANDE = pygame.font.Font(None, 74)
 FUENTE_MEDIA = pygame.font.Font(None, 50)
-FUENTE_PEQUENA = pygame.font.Font(None, 36)
+FUENTE_PEQUENA = pygame.font.Font(None, 36) # Usada para UI del juego
 
 # --- Bucle Principal del Juego ---
 def main():
@@ -38,13 +38,20 @@ def main():
     """
     while True:
         # Mostrar el menú principal y obtener la opción seleccionada
-        # Pasamos todas las variables de configuración necesarias
-        opcion_menu = main_menu(PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, FUENTE_GRANDE, FUENTE_MEDIA, NEGRO, BLANCO, GRIS, VERDE, ROJO)
+        # Pasamos todas las variables de configuración necesarias al menú
+        opcion_menu = main_menu(
+            PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, 
+            FUENTE_GRANDE, FUENTE_MEDIA, NEGRO, # Colores y fuentes para el menú
+            BLANCO, GRIS, VERDE, ROJO # Colores adicionales para botones/texto seleccionados
+        )
 
         if opcion_menu == "jugar":
             # Iniciar el bucle principal de la partida
             # El juego devuelve el puntaje final y el nombre del jugador
-            puntaje_final, nombre_jugador = main_game_loop(PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, FUENTE_PEQUENA, NEGRO, BLANCO, ROJO, VERDE, AZUL)
+            puntaje_final, nombre_jugador = main_game_loop(
+                PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, 
+                FUENTE_PEQUENA, NEGRO, BLANCO, ROJO, VERDE, AZUL # Colores y fuente para el juego
+            )
             
             # Si el juego terminó (no fue cerrado por el usuario con la X)
             if puntaje_final is not None:
@@ -53,11 +60,17 @@ def main():
                 scores.append({"nombre": nombre_jugador, "puntaje": puntaje_final})
                 save_scores(scores)
                 # Mostrar la pantalla de ranking después de guardar el puntaje
-                show_ranking(PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, FUENTE_GRANDE, FUENTE_MEDIA, NEGRO, BLANCO, scores)
+                show_ranking(
+                    PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, 
+                    FUENTE_GRANDE, FUENTE_MEDIA, NEGRO, BLANCO, scores # Colores y fuentes para el ranking
+                )
         elif opcion_menu == "ranking":
             # Cargar y mostrar el ranking
             scores = load_scores()
-            show_ranking(PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, FUENTE_GRANDE, FUENTE_MEDIA, NEGRO, BLANCO, scores)
+            show_ranking(
+                PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, 
+                FUENTE_GRANDE, FUENTE_MEDIA, NEGRO, BLANCO, scores # Colores y fuentes para el ranking
+            )
         elif opcion_menu == "creditos":
             # TODO: Implementar la pantalla de créditos.
             # Por ahora, un simple mensaje y vuelve al menú.

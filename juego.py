@@ -367,7 +367,8 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         dibujar_texto(pantalla, "GAME OVER", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 - 50, 74, ROJO, fuente=game_over_font_title)
         dibujar_texto(pantalla, f"Puntaje Final: {player['puntos']}", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 20, 36, BLANCO, fuente=game_over_font_score)
         dibujar_texto(pantalla, "Ingresa tu nombre:", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 80, 36, BLANCO, fuente=game_over_font_input)
-        dibujar_texto(pantalla, nombre_ingresado + "|", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 120, 36, BLANCO, fuente=game_over_font_input) # El "|" simula el cursor
+        # Mostrar el nombre ingresado y un cursor simulado
+        dibujar_texto(pantalla, nombre_ingresado + "|", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 120, 36, BLANCO, fuente=game_over_font_input)
         pygame.display.flip()
 
     return player['puntos'], nombre_ingresado # Devolver el puntaje y el nombre para guardar

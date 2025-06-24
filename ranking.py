@@ -7,22 +7,23 @@ def show_ranking(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_titulo, fuente_
     Muestra el ranking de los mejores puntajes.
     """
     # Asegurarse de que los puntajes estén ordenados de mayor a menor y limitados a 5
-    # Aquí no usamos list comprehension para sortear o tomar los primeros 5.
     # Primero copiamos la lista para no modificar la original que viene como argumento
     scores_a_ordenar = []
     for s in scores:
         scores_a_ordenar.append(s)
 
-    # Implementar un simple algoritmo de burbuja o similar para ordenar sin usar sorted()
-    # (aunque sorted() es una función built-in y no una list comprehension,
-    # la consigna es estricta con "sin objetos", a veces interpretado como "sin funciones de alto nivel")
-    # Para simplicidad y porque sorted() no es list comprehension:
-    scores_ordenados = sorted(scores_a_ordenar, key=lambda x: x['puntaje'], reverse=True)
+    # Implementar un simple algoritmo de burbuja para ordenar
+    # (ya que no podemos usar sorted() con lambda o list comprehensions)
+    n = len(scores_a_ordenar)
+    for i in range(n - 1):
+        for j in range(0, n - i - 1):
+            if scores_a_ordenar[j]['puntaje'] < scores_a_ordenar[j+1]['puntaje']:
+                scores_a_ordenar[j], scores_a_ordenar[j+1] = scores_a_ordenar[j+1], scores_a_ordenar[j]
     
-    # Tomar los top 5 sin list comprehension
+    # Tomar los 5 mejores puntajes sin list comprehension
     scores_a_mostrar = []
     count = 0
-    for score in scores_ordenados:
+    for score in scores_a_ordenar:
         if count < 5:
             scores_a_mostrar.append(score)
             count += 1
@@ -35,9 +36,8 @@ def show_ranking(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_titulo, fuente_
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
-                    running = False # Volver al menú principal
+            if event.type == pygame.K_ESCAPE or event.type == pygame.K_RETURN:
+                running = False # Volver al menú principal
 
         pantalla.fill(color_fondo) # Rellenar el fondo
 
