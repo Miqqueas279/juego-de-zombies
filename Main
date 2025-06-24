@@ -26,13 +26,13 @@ opcion_seleccionada = 0
 
 def dibujar_menu():
     PANTALLA.blit(fondo, (0, 0))  # Fondo con imagen
-    titulo = fuente.render(" MENÚ PRINCIPAL ", True, BLANCO)
-    PANTALLA.blit(titulo, (100, 100))  # Alineado a la izquierda
+    titulo = fuente.render(" Juego de Zombies ", True, BLANCO)
+    PANTALLA.blit(titulo, (100, 10))  # Alineado a la izquierda
 
     for i, texto in enumerate(opciones):
         color = AZUL if i == opcion_seleccionada else BLANCO
         superficie = fuente.render(texto, True, color)
-        PANTALLA.blit(superficie, (100, 200 + i * 60))  # Alineado a la izquierda
+        PANTALLA.blit(superficie, (100, 200 + i * 50))  # Alineado a la izquierda
 
     pygame.display.flip()
 
