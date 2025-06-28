@@ -13,7 +13,6 @@ def show_ranking(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_titulo, fuente_
         scores_a_ordenar.append(s)
 
     # Implementar un simple algoritmo de burbuja para ordenar
-    # (ya que no podemos usar sorted() con lambda o list comprehensions)
     n = len(scores_a_ordenar)
     for i in range(n - 1):
         for j in range(0, n - i - 1):
@@ -36,8 +35,10 @@ def show_ranking(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_titulo, fuente_
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.K_ESCAPE or event.type == pygame.K_RETURN:
-                running = False # Volver al menú principal
+            # Manejo de eventos de teclado para volver al menú
+            if event.type == pygame.KEYDOWN: # Aquí se verifica si el evento es de tipo KEYDOWN
+                if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+                    running = False # Volver al menú principal
 
         pantalla.fill(color_fondo) # Rellenar el fondo
 
