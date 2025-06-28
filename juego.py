@@ -1,6 +1,8 @@
 import pygame
 import random
 import math
+import os # Importar os para manejar rutas de archivos
+
 from utils import dibujar_texto, detectar_colision_rect, get_font # Importar funciones auxiliares
 
 # --- Constantes del Juego ---
@@ -9,6 +11,9 @@ COLOR_NORMAL_ENEMY = (255, 0, 0) # Rojo
 COLOR_BOOSTED_ENEMY = (255, 100, 0) # Naranja (más rápido)
 COLOR_KAMIKAZE_ENEMY = (255, 255, 0) # Amarillo (kamikaze)
 COLOR_DISPARO_JUGADOR = (0, 255, 0) # Verde
+
+# Nuevo color para los corazones "vacíos" (vidas perdidas)
+COLOR_CORAZON_PERDIDO = (50, 50, 50, 150) # Gris oscuro semi-transparente (con transparencia)
 
 VELOCIDAD_JUGADOR_BASE = 5
 VELOCIDAD_DISPARO_JUGADOR = 10
@@ -35,6 +40,11 @@ DASH_COOLDOWN_FRAMES = 180 # 3 segundos a 60 FPS
 DASH_DURATION_FRAMES = 15  # Duración del dash en frames
 DASH_VELOCIDAD_MULTIPLIER = 2.5 # Multiplicador de velocidad durante el dash
 
+# Rutas de imágenes
+# Obtener el directorio base del script actual
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Cargamos la spritesheet completa 'icons.png'
+SPRITESHEET_ICONS_PATH = os.path.join(BASE_DIR, 'image', 'icons.png') 
 
 # --- Funciones de Manejo de Entidades ---
 
@@ -257,6 +267,27 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list):
     
     return game_over
 
+def dibujar_vidas_corazones(pantalla, vidas_actuales, vidas_maximas, heart_image_surface, lost_heart_color):
+    """
+    Dibuja los corazones de vida al estilo Minecraft.
+    """
+    x_offset = 10 # Posición inicial X para el primer corazón
+    y_offset = 40 # Posición Y para los corazones
+    spacing = heart_image_surface.get_width() + 5 # Espacio entre corazones
+
+    for i in range(vidas_maximas):
+        if i < vidas_actuales:
+            # Dibujar corazón rojo (vida actual)
+            pantalla.blit(heart_image_surface, (x_offset + i * spacing, y_offset))
+        else:
+            # Dibujar un rectángulo gris oscuro semi-transparente para la vida perdida
+            lost_heart_rect = pygame.Rect(x_offset + i * spacing, y_offset, 
+                                          heart_image_surface.get_width(), 
+                                          heart_image_surface.get_height()) 
+            s = pygame.Surface(lost_heart_rect.size, pygame.SRCALPHA) # Superficie con canal alfa
+            s.fill(lost_heart_color) # Rellenar con el color gris oscuro semi-transparente
+            pantalla.blit(s, lost_heart_rect)
+
 
 # --- Bucle Principal del Juego (main_game_loop) ---
 def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGRO, BLANCO, ROJO, VERDE, AZUL):
@@ -264,6 +295,38 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
     Gestiona la lógica principal de la partida.
     Retorna el puntaje final y el nombre del jugador si el juego termina.
     """
+    # Variable local para la superficie del corazón
+    heart_surface_local = None 
+
+    # Cargar y procesar la imagen del corazón una vez
+    # Esta variable local se inicializará la primera vez que se llama a main_game_loop
+    # y mantendrá su valor en llamadas subsecuentes dentro de la misma ejecución del juego.
+    if heart_surface_local is None:
+        try:
+            # Cargar la spritesheet completa
+            spritesheet = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha()
+
+            # Definir el rectángulo del corazón lleno en la spritesheet (x, y, ancho, alto)
+            # El corazón rojo completo está en (16,0) y mide 9x9 píxeles en la spritesheet de Minecraft
+            HEART_SPRITE_RECT_SOURCE = pygame.Rect(52, 0, 9, 9) #(el 52 marca la posicion donde esta el corazon rojo 
+            #                                                    del spirtesheet de minecraft, si lo quieren cambiar a 
+            #                                                    alguno vayan probando numeros) 
+
+            # Extraer el corazón lleno
+            heart_surface_local = spritesheet.subsurface(HEART_SPRITE_RECT_SOURCE)
+            
+            # Escalar el corazón para que sea más visible
+            SCALE_SIZE = (30, 30) # Tamaño deseado para los corazones en pantalla
+            heart_surface_local = pygame.transform.scale(heart_surface_local, SCALE_SIZE)
+
+        except pygame.error as e:
+            print(f"Error cargando o procesando la spritesheet de iconos: {e}")
+            # Fallback si no se puede cargar o procesar la imagen: un círculo rojo
+            temp_surface_full = pygame.Surface((30, 30), pygame.SRCALPHA)
+            pygame.draw.circle(temp_surface_full, (255, 0, 0, 255), (15, 15), 15) # Círculo rojo opaco
+            heart_surface_local = temp_surface_full
+
+
     reloj = pygame.time.Clock()
     fps = 60
 
@@ -327,7 +390,9 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
 
         # Dibujar UI (vidas y puntaje)
         dibujar_texto(pantalla, f"Puntaje: {player['puntos']}", 10, 10, 24, BLANCO, fuente=fuente_pequena)
-        dibujar_texto(pantalla, f"Vidas: {player['vidas']}", 10, 40, 24, BLANCO, fuente=fuente_pequena)
+        # Reemplazar el texto de vidas con los corazones
+        # Pasamos el corazón rojo y el color para los corazones perdidos
+        dibujar_vidas_corazones(pantalla, player['vidas'], VIDAS_INICIALES, heart_surface_local, COLOR_CORAZON_PERDIDO)
         
         # Mostrar el estado del dash cooldown
         if player['dash_cooldown_timer'] > 0:
@@ -367,7 +432,8 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         dibujar_texto(pantalla, "GAME OVER", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 - 50, 74, ROJO, fuente=game_over_font_title)
         dibujar_texto(pantalla, f"Puntaje Final: {player['puntos']}", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 20, 36, BLANCO, fuente=game_over_font_score)
         dibujar_texto(pantalla, "Ingresa tu nombre:", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 80, 36, BLANCO, fuente=game_over_font_input)
-        dibujar_texto(pantalla, nombre_ingresado + "|", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 120, 36, BLANCO, fuente=game_over_font_input) # El "|" simula el cursor
+        # Mostrar el nombre ingresado y un cursor simulado
+        dibujar_texto(pantalla, nombre_ingresado + "|", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 120, 36, BLANCO, fuente=game_over_font_input)
         pygame.display.flip()
 
     return player['puntos'], nombre_ingresado # Devolver el puntaje y el nombre para guardar

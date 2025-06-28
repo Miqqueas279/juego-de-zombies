@@ -1,6 +1,22 @@
 [
     {
         "nombre": "fede",
+        "puntaje": 460
+    },
+    {
+        "nombre": "hola",
+        "puntaje": 120
+    },
+    {
+        "nombre": "fede",
         "puntaje": 70
+    },
+    {
+        "nombre": "",
+        "puntaje": 35
+    },
+    {
+        "nombre": "nose",
+        "puntaje": 30
     }
 ]
