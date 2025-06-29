@@ -20,7 +20,7 @@ def draw_text(pantalla, texto, x, y, tamano_fuente, color, align, font=None ):
         fuente_obj = get_font(tamano_fuente) # Usar la función get_font
 
     shadow_surface = fuente_obj.render(texto, True, (0, 0, 0))
-    superficie_texto = fuente_obj.render(texto, True, (255, 255, 255))
+    superficie_texto = fuente_obj.render(texto, True, color)
 
     if align == "left":
         shadow_rect = shadow_surface.get_rect(midleft=(x + 2, y + 2))
