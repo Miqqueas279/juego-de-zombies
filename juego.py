@@ -1,17 +1,14 @@
 import pygame
 import random
 import math
-import os # Importar os para manejar rutas de archivos
+import os
 
 # Importar funciones auxiliares desde utils.score y utils.text
 from utils.score import detectar_colision_rect 
 from utils.text import draw_text, get_font
 
 # --- Constantes del Juego ---
-# Eliminadas las constantes de color para entidades que ahora usan sprites (COLOR_JUGADOR, COLOR_NORMAL_ENEMY, etc.)
 COLOR_DISPARO_JUGADOR = (0, 255, 0) # Verde (los disparos aún se dibujan como rectángulos de color)
-
-# Nuevo color para los corazones "vacíos" (vidas perdidas)
 COLOR_CORAZON_PERDIDO = (50, 50, 50, 150) # Gris oscuro semi-transparente (con transparencia)
 
 VELOCIDAD_JUGADOR_BASE = 5
@@ -40,11 +37,8 @@ DASH_DURATION_FRAMES = 15  # Duración del dash en frames
 DASH_VELOCIDAD_MULTIPLIER = 2.5 # Multiplicador de velocidad durante el dash
 
 # Rutas de recursos
-# Como juego.py está en la carpeta raíz del proyecto (PROYECTO_JUEGO-DE-ZOMBIES),
-# BASE_DIR debe ser simplemente el directorio donde se encuentra este archivo.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Las rutas de los assets ahora se construyen correctamente desde BASE_DIR
 SPRITESHEET_ICONS_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'icons.png') 
 FONDO_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'floor.jpg')
 PLAYER_IMAGE_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'player.png')
@@ -59,12 +53,13 @@ SOUND_ENEMY_IMPACT_PATH = os.path.join(BASE_DIR, 'assets', 'sounds', 'enemy_impa
 
 def init_player(ANCHO_PANTALLA, ALTO_PANTALLA):
     """
-    Inicializa los datos del jugador como un diccionario.
+    Inicializa los datos del jugador como un diccionario para juego horizontal.
+    El jugador inicia a la izquierda, moviéndose verticalmente.
     """
     player_ancho = 50
     player_alto = 50
     return {
-        'rect': pygame.Rect(ANCHO_PANTALLA // 2 - player_ancho // 2, ALTO_PANTALLA - 70 - player_alto // 2, player_ancho, player_alto),
+        'rect': pygame.Rect(50, ALTO_PANTALLA // 2 - player_alto // 2, player_ancho, player_alto), # Inicia a la izquierda, centrado verticalmente
         'velocidad': VELOCIDAD_JUGADOR_BASE,
         'vidas': VIDAS_INICIALES,
         'puntos': 0,
@@ -75,37 +70,37 @@ def init_player(ANCHO_PANTALLA, ALTO_PANTALLA):
         'dash_cooldown_timer': 0
     }
 
-def mover_jugador(player_data, keys, ANCHO_PANTALLA):
+def mover_jugador(player_data, keys, ALTO_PANTALLA): # Ahora depende de ALTO_PANTALLA
     """
-    Actualiza la posición del jugador según las teclas presionadas.
+    Actualiza la posición del jugador según las teclas presionadas para movimiento vertical.
     """
     current_speed = player_data['velocidad']
     if player_data['en_dash']:
         current_speed *= DASH_VELOCIDAD_MULTIPLIER
 
-    if keys[pygame.K_LEFT]:
-        player_data['rect'].x -= current_speed
-    if keys[pygame.K_RIGHT]:
-        player_data['rect'].x += current_speed
+    if keys[pygame.K_UP]:
+        player_data['rect'].y -= current_speed
+    if keys[pygame.K_DOWN]:
+        player_data['rect'].y += current_speed
 
-    # Limitar el movimiento dentro de la pantalla
-    if player_data['rect'].left < 0:
-        player_data['rect'].left = 0
-    if player_data['rect'].right > ANCHO_PANTALLA:
-        player_data['rect'].right = ANCHO_PANTALLA
+    # Limitar el movimiento dentro de la pantalla (ahora verticalmente)
+    if player_data['rect'].top < 0:
+        player_data['rect'].top = 0
+    if player_data['rect'].bottom > ALTO_PANTALLA:
+        player_data['rect'].bottom = ALTO_PANTALLA
 
 def disparar_jugador(player_data, current_frames):
     """
-    Crea un nuevo diccionario de disparo si el cooldown lo permite.
+    Crea un nuevo diccionario de disparo si el cooldown lo permite (disparos hacia la derecha).
     """
     if current_frames - player_data['ultima_vez_disparo'] > player_data['cooldown_disparo']:
         player_data['ultima_vez_disparo'] = current_frames
-        bullet_ancho = 5
-        bullet_alto = 15
+        bullet_ancho = 15 # Disparo horizontal, por lo tanto más ancho que alto
+        bullet_alto = 5
         return {
-            'rect': pygame.Rect(player_data['rect'].centerx - bullet_ancho // 2, player_data['rect'].top - bullet_alto, bullet_ancho, bullet_alto),
+            'rect': pygame.Rect(player_data['rect'].right, player_data['rect'].centery - bullet_alto // 2, bullet_ancho, bullet_alto), # Sale de la derecha del jugador
             'velocidad': VELOCIDAD_DISPARO_JUGADOR,
-            'color': COLOR_DISPARO_JUGADOR, # Los disparos aún usan color y son rectángulos.
+            'color': COLOR_DISPARO_JUGADOR,
             'origen': 'jugador'
         }
     return None
@@ -118,8 +113,8 @@ def usar_dash_jugador(player_data):
         player_data['en_dash'] = True
         player_data['dash_timer'] = DASH_DURATION_FRAMES
         player_data['dash_cooldown_timer'] = DASH_COOLDOWN_FRAMES
-        return True # Dash activado
-    return False # Dash no activado (en cooldown)
+        return True
+    return False
 
 def actualizar_dash_jugador(player_data):
     """
@@ -139,20 +134,21 @@ def dibujar_jugador(pantalla, player_data, player_image):
     """
     pantalla.blit(player_image, player_data['rect'])
 
-    # El borde blanco para el dash se mantiene ya que es un efecto visual independiente del sprite base.
+    # El borde blanco para el dash se mantiene
     if player_data['en_dash']:
         pygame.draw.rect(pantalla, (255, 255, 255), player_data['rect'].inflate(10, 10), 2, border_radius=5)
 
 
-def generar_enemigo(ANCHO_PANTALLA):
+def generar_enemigo(ALTO_PANTALLA): # Ahora depende de ALTO_PANTALLA
     """
-    Crea un nuevo diccionario de enemigo con propiedades aleatorias.
+    Crea un nuevo diccionario de enemigo con propiedades aleatorias para juego horizontal.
+    Los enemigos aparecen a la derecha, moviéndose horizontalmente.
     """
     enemy_ancho = 40
     enemy_alto = 40
-    # Posición X aleatoria en la parte superior
-    x_pos = random.randint(enemy_ancho // 2, ANCHO_PANTALLA - enemy_ancho // 2)
-    y_pos = -enemy_alto # Empieza justo fuera de la pantalla por arriba
+    # Posición Y aleatoria en la parte derecha
+    y_pos = random.randint(enemy_alto // 2, ALTO_PANTALLA - enemy_alto // 2)
+    x_pos = 800 + enemy_ancho # Empieza justo fuera de la pantalla por la derecha (ANCHO_PANTALLA + enemy_ancho)
 
     # Propiedades base
     velocidad_enemigo = VELOCIDAD_ENEMIGO_BASE
@@ -167,7 +163,7 @@ def generar_enemigo(ANCHO_PANTALLA):
         velocidad_enemigo = VELOCIDAD_ENEMIGO_BASE * FACTOR_VELOCIDAD_KAMIKAZE
         vida_enemigo = VIDA_KAMIKAZE
         puntaje_enemigo = PUNTAJE_KAMIKAZE
-    elif r < PROBABILIDAD_KAMIKAZE + PROBABILIDAD_BOOSTED: # Suma las probabilidades para que no se solapen
+    elif r < PROBABILIDAD_KAMIKAZE + PROBABILIDAD_BOOSTED:
         tipo_enemigo = "boosted"
         velocidad_enemigo = VELOCIDAD_ENEMIGO_BASE * FACTOR_VELOCIDAD_BOOSTED
         puntaje_enemigo = PUNTAJE_BOOSTED
@@ -177,15 +173,15 @@ def generar_enemigo(ANCHO_PANTALLA):
         'velocidad': velocidad_enemigo,
         'vida': vida_enemigo,
         'tipo': tipo_enemigo,
-        'puntos': puntaje_enemigo # Puntos que otorga al ser destruido
+        'puntos': puntaje_enemigo
     }
 
 def mover_enemigos(enemigos_list):
     """
-    Actualiza la posición de todos los enemigos en la lista.
+    Actualiza la posición de todos los enemigos en la lista (movimiento hacia la izquierda).
     """
     for enemigo in enemigos_list:
-        enemigo['rect'].y += enemigo['velocidad']
+        enemigo['rect'].x -= enemigo['velocidad'] # Ahora mueven en X
 
 def dibujar_enemigos(pantalla, enemigos_list, enemy_image): 
     """
@@ -196,11 +192,10 @@ def dibujar_enemigos(pantalla, enemigos_list, enemy_image):
 
 def mover_disparos(disparos_list):
     """
-    Actualiza la posición de todos los disparos en la lista.
+    Actualiza la posición de todos los disparos en la lista (movimiento hacia la derecha).
     """
     for disparo in disparos_list:
-        # En este juego, los disparos del jugador van hacia arriba
-        disparo['rect'].y -= disparo['velocidad']
+        disparo['rect'].x += disparo['velocidad'] # Ahora mueven en X
 
 def dibujar_disparos(pantalla, disparos_list):
     """
@@ -209,26 +204,25 @@ def dibujar_disparos(pantalla, disparos_list):
     for disparo in disparos_list:
         pygame.draw.rect(pantalla, disparo['color'], disparo['rect'])
 
-def limpiar_entidades_fuera_pantalla(enemigos_list, disparos_list, ALTO_PANTALLA):
+def limpiar_entidades_fuera_pantalla(enemigos_list, disparos_list, ANCHO_PANTALLA): # Ahora depende de ANCHO_PANTALLA
     """
-    Elimina enemigos y disparos que han salido de la pantalla.
-    Iteramos hacia atrás para poder eliminar elementos de la lista sin problemas de índice.
+    Elimina enemigos y disparos que han salido de la pantalla (límites horizontales).
     """
-    # Limpiar enemigos
+    # Limpiar enemigos (han salido por la izquierda)
     i = len(enemigos_list) - 1
     while i >= 0:
-        if enemigos_list[i]['rect'].top > ALTO_PANTALLA:
+        if enemigos_list[i]['rect'].right < 0: # Si el enemigo ha cruzado el borde izquierdo
             del enemigos_list[i]
         i -= 1
     
-    # Limpiar disparos (del jugador, que van hacia arriba)
+    # Limpiar disparos (han salido por la derecha)
     i = len(disparos_list) - 1
     while i >= 0:
-        if disparos_list[i]['rect'].bottom < 0:
+        if disparos_list[i]['rect'].left > ANCHO_PANTALLA: # Si el disparo ha cruzado el borde derecho
             del disparos_list[i]
         i -= 1
 
-def manejar_colisiones(player_data, enemigos_list, player_bullets_list, player_impact_sound, enemy_impact_sound): # Añadidos parámetros de sonido
+def manejar_colisiones(player_data, enemigos_list, player_bullets_list, player_impact_sound, enemy_impact_sound):
     """
     Maneja todas las colisiones entre entidades y actualiza vidas/puntos.
     Retorna True si el juego termina (vidas del jugador <= 0), False en caso contrario.
@@ -240,21 +234,21 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list, player_i
     while i_bullet >= 0:
         bullet = player_bullets_list[i_bullet]
         j_enemy = len(enemigos_list) - 1
-        bullet_hit = False # Bandera para saber si la bala impactó
+        bullet_hit = False
         while j_enemy >= 0:
             enemy = enemigos_list[j_enemy]
             if detectar_colision_rect(bullet['rect'], enemy['rect']):
                 enemy['vida'] -= 1
-                enemy_impact_sound.play() # Reproducir sonido
-                bullet_hit = True # La bala impactó, debe ser eliminada
+                enemy_impact_sound.play()
+                bullet_hit = True
                 if enemy['vida'] <= 0:
-                    player_data['puntos'] += enemy['puntos'] # Sumar puntos por enemigo destruido
-                    del enemigos_list[j_enemy] # Eliminar enemigo
-                break # Salir del bucle interno, el disparo ya impactó
+                    player_data['puntos'] += enemy['puntos']
+                    del enemigos_list[j_enemy]
+                break
             j_enemy -= 1
         
         if bullet_hit:
-            del player_bullets_list[i_bullet] # Eliminar el disparo
+            del player_bullets_list[i_bullet]
         i_bullet -= 1
 
     # Colisión enemigo con jugador
@@ -263,11 +257,11 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list, player_i
         enemy = enemigos_list[i_enemy]
         if detectar_colision_rect(player_data['rect'], enemy['rect']):
             player_data['vidas'] -= 1
-            player_impact_sound.play() # Reproducir sonido
-            del enemigos_list[i_enemy] # El enemigo se destruye al impactar al jugador
+            player_impact_sound.play()
+            del enemigos_list[i_enemy]
             if player_data['vidas'] <= 0:
-                game_over = True # Juego terminado
-                break # No es necesario seguir revisando enemigos
+                game_over = True
+                break
         i_enemy -= 1
     
     return game_over
@@ -276,34 +270,31 @@ def dibujar_vidas_corazones(pantalla, vidas_actuales, vidas_maximas, heart_image
     """
     Dibuja los corazones de vida al estilo Minecraft.
     """
-    x_offset = 10 # Posición inicial X para el primer corazón
-    y_offset = 40 # Posición Y para los corazones
-    spacing = heart_image_surface.get_width() + 5 # Espacio entre corazones
+    # Cambiamos la posición de los corazones para que estén en la esquina superior derecha o inferior izquierda
+    # Los pondré en la esquina superior izquierda como antes, pero ajustando si es necesario.
+    x_offset = 10 
+    y_offset = 40
+    spacing = heart_image_surface.get_width() + 5 
 
     for i in range(vidas_maximas):
         if i < vidas_actuales:
-            # Dibujar corazón rojo (vida actual)
             pantalla.blit(heart_image_surface, (x_offset + i * spacing, y_offset))
         else:
-            # Dibujar un rectángulo gris oscuro semi-transparente para la vida perdida
             lost_heart_rect = pygame.Rect(x_offset + i * spacing, y_offset, 
-                                        heart_image_surface.get_width(), 
-                                        heart_image_surface.get_height()) 
-            s = pygame.Surface(lost_heart_rect.size, pygame.SRCALPHA) # Superficie con canal alfa
-            s.fill(lost_heart_color) # Rellenar con el color gris oscuro semi-transparente
+                                          heart_image_surface.get_width(), 
+                                          heart_image_surface.get_height()) 
+            s = pygame.Surface(lost_heart_rect.size, pygame.SRCALPHA)
+            s.fill(lost_heart_color)
             pantalla.blit(s, lost_heart_rect)
 
 
 # --- Bucle Principal del Juego (main_game_loop) ---
 def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGRO, BLANCO, ROJO, VERDE, AZUL):
     """
-    Gestiona la lógica principal de la partida.
+    Gestiona la lógica principal de la partida en modo horizontal.
     Retorna el puntaje final y el nombre del jugador si el juego termina.
     """
     # Cargar los recursos una única vez al iniciar el bucle del juego
-    # Usamos un atributo de la función para cachear las superficies de las imágenes y sonidos.
-    # Esto asegura que se carguen solo la primera vez que se llama a main_game_loop,
-    # y se reutilicen en llamadas posteriores (si el juego vuelve a empezar).
     if not hasattr(main_game_loop, 'resources_cached'):
         main_game_loop.resources_cached = {}
         # Carga directa de todos los recursos (sin try-except)
@@ -314,6 +305,8 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         )
 
         # Cargar imágenes de jugador y enemigo
+        # Podrías querer rotar los sprites si el jugador/enemigos miran hacia un lado.
+        # Por ahora, los dejamos en su orientación original.
         main_game_loop.resources_cached['player_image'] = pygame.image.load(PLAYER_IMAGE_PATH).convert_alpha()
         main_game_loop.resources_cached['enemy_image'] = pygame.image.load(ENEMY_IMAGE_PATH).convert_alpha()
 
@@ -327,13 +320,10 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
 
         # Cargar la spritesheet de iconos y extraer el corazón
         spritesheet = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha()
-        # Definir el rectángulo del corazón lleno en la spritesheet (x, y, ancho, alto)
-        # El corazón rojo completo está en (52,0) y mide 9x9 píxeles en la spritesheet de Minecraft
         HEART_SPRITE_RECT_SOURCE = pygame.Rect(52, 0, 9, 9) 
         main_game_loop.resources_cached['heart_surface_local'] = spritesheet.subsurface(HEART_SPRITE_RECT_SOURCE)
         
-        # Escalar el corazón para que sea más visible
-        SCALE_SIZE = (30, 30) # Tamaño deseado para los corazones en pantalla
+        SCALE_SIZE = (30, 30)
         main_game_loop.resources_cached['heart_surface_local'] = pygame.transform.scale(
             main_game_loop.resources_cached['heart_surface_local'], SCALE_SIZE
         )
@@ -353,8 +343,8 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
     player_image = main_game_loop.resources_cached['player_image']
     enemy_image = main_game_loop.resources_cached['enemy_image']
     heart_surface_to_use = main_game_loop.resources_cached['heart_surface_local']
-    player_impact_sound = main_game_loop.resources_cached['player_impact_sound'] # Obtener el sonido cacheado
-    enemy_impact_sound = main_game_loop.resources_cached['enemy_impact_sound'] # Obtener el sonido cacheado
+    player_impact_sound = main_game_loop.resources_cached['player_impact_sound']
+    enemy_impact_sound = main_game_loop.resources_cached['enemy_impact_sound']
 
     reloj = pygame.time.Clock()
     fps = 60
@@ -370,16 +360,14 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
 
     running = True
     while running:
-        # Obtener el tiempo actual en frames (o ticks)
         current_frames = pygame.time.get_ticks() // (1000 // fps)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                return None, None # Si el usuario cierra la ventana durante el juego
+                return None, None
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    # Intentar disparar y añadir el nuevo disparo a la lista
                     nuevo_disparo = disparar_jugador(player, current_frames)
                     if nuevo_disparo:
                         player_bullets.append(nuevo_disparo)
@@ -387,44 +375,42 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
                     usar_dash_jugador(player)
 
         # --- Movimiento del Jugador ---
-        keys = pygame.key.get_pressed() # Obtener todas las teclas presionadas
-        mover_jugador(player, keys, ANCHO_PANTALLA)
-        actualizar_dash_jugador(player) # Actualizar el temporizador del dash
+        keys = pygame.key.get_pressed()
+        mover_jugador(player, keys, ALTO_PANTALLA) # Ahora se pasa ALTO_PANTALLA
+        actualizar_dash_jugador(player)
 
         # --- Generación de Enemigos ---
         frames_desde_ultima_generacion_enemigo += 1
         if frames_desde_ultima_generacion_enemigo >= COOLDOWN_GENERACION_ENEMIGO_FRAMES:
-            enemigos.append(generar_enemigo(ANCHO_PANTALLA))
-            frames_desde_ultima_generacion_enemigo = 0 # Reiniciar el contador
+            enemigos.append(generar_enemigo(ALTO_PANTALLA)) # Ahora se pasa ALTO_PANTALLA
+            frames_desde_ultima_generacion_enemigo = 0
 
         # --- Movimiento de Enemigos y Disparos ---
         mover_enemigos(enemigos)
         mover_disparos(player_bullets)
 
         # --- Colisiones ---
-        # Pasar los objetos de sonido ya cargados a la función de colisiones
         game_over = manejar_colisiones(player, enemigos, player_bullets, player_impact_sound, enemy_impact_sound)
         if game_over:
-            running = False # Si el jugador pierde todas las vidas, terminar el juego
+            running = False
 
         # --- Eliminar elementos fuera de pantalla ---
-        limpiar_entidades_fuera_pantalla(enemigos, player_bullets, ALTO_PANTALLA)
+        limpiar_entidades_fuera_pantalla(enemigos, player_bullets, ANCHO_PANTALLA) # Ahora se pasa ANCHO_PANTALLA
 
         # --- Dibujar ---
         pantalla.blit(fondo_surface, (0, 0)) # Dibujar el fondo
 
-        dibujar_jugador(pantalla, player, player_image) # Dibujar el jugador
-        dibujar_enemigos(pantalla, enemigos, enemy_image) # Dibujar todos los enemigos
-        dibujar_disparos(pantalla, player_bullets) # Dibujar todos los disparos del jugador
+        dibujar_jugador(pantalla, player, player_image) 
+        dibujar_enemigos(pantalla, enemigos, enemy_image) 
+        dibujar_disparos(pantalla, player_bullets) 
 
         # Dibujar UI (vidas y puntaje)
-        # Asegurarse de pasar el argumento 'align' a draw_text
         draw_text(pantalla, f"Puntaje: {player['puntos']}", 15, 20, 24, BLANCO, "left", font=fuente_pequena)
-        # Reemplazar el texto de vidas con los corazones
-        # Pasamos el corazón rojo y el color para los corazones perdidos
         dibujar_vidas_corazones(pantalla, player['vidas'], VIDAS_INICIALES, heart_surface_to_use, COLOR_CORAZON_PERDIDO)
         
-        # Mostrar el estado del dash cooldown
+        # Mostrar el estado del dash cooldown (ajustar posición para layout horizontal)
+        # Podríamos moverlo a la esquina inferior derecha o seguir en la superior derecha
+        # Lo mantendré en la superior derecha por ahora.
         if player['dash_cooldown_timer'] > 0:
             tiempo_restante_dash = math.ceil(player['dash_cooldown_timer'] / fps)
             draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 10, 20, 24, ROJO, "right", font=fuente_pequena)
@@ -432,15 +418,13 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
             draw_text(pantalla, "Dash Listo", ANCHO_PANTALLA - 10, 20, 24, VERDE, "right", font=fuente_pequena)
 
 
-        pygame.display.flip() # Actualizar toda la pantalla
+        pygame.display.flip()
 
-        reloj.tick(fps) # Controlar los FPS del juego
+        reloj.tick(fps)
 
     # --- Game Over Screen ---
-    # Pedir nombre al jugador después de que el bucle principal del juego termina
     nombre_ingresado = ""
     input_activo = True
-    # Usar una fuente diferente para esta pantalla si es necesario
     game_over_font_title = get_font(74)
     game_over_font_score = get_font(36)
     game_over_font_input = get_font(36)
@@ -448,22 +432,20 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
     while input_activo:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return None, None # Si el usuario cierra la ventana durante el ingreso de nombre
+                return None, None
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN: # Si presiona ENTER, finaliza el ingreso
+                if event.key == pygame.K_RETURN:
                     input_activo = False
-                elif event.key == pygame.K_BACKSPACE: # Si presiona BACKSPACE, borra el último carácter
+                elif event.key == pygame.K_BACKSPACE:
                     nombre_ingresado = nombre_ingresado[:-1]
                 else:
-                    # Añadir el carácter presionado al nombre
                     nombre_ingresado += event.unicode
 
-        pantalla.fill(NEGRO) # Fondo negro para la pantalla de Game Over
+        pantalla.fill(NEGRO)
         draw_text(pantalla, "GAME OVER", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 - 50, 74, ROJO, "center", font=game_over_font_title)
         draw_text(pantalla, f"Puntaje Final: {player['puntos']}", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 20, 36, BLANCO, "center", font=game_over_font_score)
         draw_text(pantalla, "Ingresa tu nombre:", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 80, 36, BLANCO, "center", font=game_over_font_input)
-        # Mostrar el nombre ingresado y un cursor simulado
         draw_text(pantalla, nombre_ingresado + "|", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 120, 36, BLANCO, "center", font=game_over_font_input)
         pygame.display.flip()
 
-    return player['puntos'], nombre_ingresado # Devolver el puntaje y el nombre para guardar
+    return player['puntos'], nombre_ingresado
