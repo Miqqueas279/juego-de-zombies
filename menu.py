@@ -8,8 +8,14 @@ def main_menu(screen: pygame.Surface, width: int, height: int, font_title: pygam
     Muestra el menú principal y maneja la interacción con los botones.
     Retorna la acción seleccionada ('jugar', 'ranking', 'creditos', 'salir').
     """
+    title_img = pygame.image.load("assets\\image\\title.png").convert_alpha()
+    title_img = pygame.transform.scale(title_img, (400, 100))
+
     background_img = pygame.image.load("assets\\image\\background.jpg").convert()
     background_img = pygame.transform.scale(background_img, (width, height))
+
+    icon_img = pygame.image.load("assets\\image\\weapon.png").convert_alpha()
+    icon_img = pygame.transform.scale(icon_img, (30, 30))
 
     sound_click = pygame.mixer.Sound("assets\\sounds\\shoot.mp3")
     sound_hover = pygame.mixer.Sound("assets\\sounds\\selection.mp3")
@@ -52,12 +58,12 @@ def main_menu(screen: pygame.Surface, width: int, height: int, font_title: pygam
 
         screen.blit(background_img, (0, 0))
 
-        # Dibujar el título del juego
-        draw_text(screen, "Cielo Letal", width // 2, height // 4, font_title.get_height(), text_color, font=font_title)
+        title_rect = title_img.get_rect(center=(width // 2, int(height * 0.20)))
+        screen.blit(title_img, title_rect)
 
         # Dibujar todos los botones
         for button in buttons:
-            draw_button(screen, button, mouse_pos, button_color, button_hover, button_font, text_color)
+            draw_button(screen, button, mouse_pos, button_color, button_hover, button_font, text_color, icon_img)
 
         pygame.display.flip() # Actualizar la pantalla
     

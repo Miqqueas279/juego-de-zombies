@@ -412,7 +412,7 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         dibujar_disparos(pantalla, player_bullets) # Dibujar todos los disparos del jugador
 
         # Dibujar UI (vidas y puntaje)
-        draw_text(pantalla, f"Puntaje: {player['puntos']}", 60, 20, 24, BLANCO, font=fuente_pequena)
+        draw_text(pantalla, f"Puntaje: {player['puntos']}", 15, 20, 24, BLANCO, font=fuente_pequena)
         # Reemplazar el texto de vidas con los corazones
         # Pasamos el corazón rojo y el color para los corazones perdidos
         dibujar_vidas_corazones(pantalla, player['vidas'], VIDAS_INICIALES, heart_surface_local, COLOR_CORAZON_PERDIDO)
@@ -422,7 +422,7 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
             tiempo_restante_dash = math.ceil(player['dash_cooldown_timer'] / fps)
             draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 150, 10, 24, ROJO, font=fuente_pequena)
         elif not player['en_dash']:
-            draw_text(pantalla, "Dash Listo", ANCHO_PANTALLA - 60, 20, 24, VERDE, font=fuente_pequena)
+            draw_text(pantalla, "Dash Listo", ANCHO_PANTALLA - 110, 20, 24, VERDE, font=fuente_pequena)
 
 
         pygame.display.flip() # Actualizar toda la pantalla

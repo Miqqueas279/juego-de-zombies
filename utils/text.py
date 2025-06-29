@@ -19,7 +19,10 @@ def draw_text(pantalla, texto, x, y, tamano_fuente, color, font=None):
     else:
         fuente_obj = get_font(tamano_fuente) # Usar la función get_font
 
+    shadow_surface = fuente_obj.render(texto, True, (0, 0, 0))
+    shadow_rect = shadow_surface.get_rect(midleft=(x + 2, y + 2))
+    pantalla.blit(shadow_surface, shadow_rect)
 
     superficie_texto = fuente_obj.render(texto, True, color)
-    rect_texto = superficie_texto.get_rect(center=(x, y))
+    rect_texto = superficie_texto.get_rect(midleft=(x, y))
     pantalla.blit(superficie_texto, rect_texto)

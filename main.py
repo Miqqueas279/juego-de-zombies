@@ -23,6 +23,7 @@ GRIS = (200, 200, 200)
 ROJO = (255, 0, 0)
 VERDE = (0, 255, 0)
 AZUL = (0, 0, 255)
+NARANJA = (228,142,0)
 
 # --- Fuentes ---
 # pygame.font.Font(None, tamaño) crea una fuente por defecto de Pygame
@@ -39,7 +40,7 @@ def main():
     while True:
         # Mostrar el menú principal y obtener la opción seleccionada
         # Pasamos todas las variables de configuración necesarias
-        opcion_menu = main_menu(PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, FUENTE_GRANDE, FUENTE_MEDIA, BLANCO, GRIS, VERDE)
+        opcion_menu = main_menu(PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, FUENTE_GRANDE, FUENTE_MEDIA, BLANCO, GRIS, NARANJA)
 
         if opcion_menu == "jugar":
             # Iniciar el bucle principal de la partida
