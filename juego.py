@@ -3,15 +3,13 @@ import random
 import math
 import os # Importar os para manejar rutas de archivos
 
-from utils.score import detectar_colision_rect # Importar funciones auxiliares
+# Importar funciones auxiliares desde utils.score y utils.text
+from utils.score import detectar_colision_rect 
 from utils.text import draw_text, get_font
 
 # --- Constantes del Juego ---
-COLOR_JUGADOR = (0, 0, 255)  # Azul
-COLOR_NORMAL_ENEMY = (255, 0, 0) # Rojo
-COLOR_BOOSTED_ENEMY = (255, 100, 0) # Naranja (más rápido)
-COLOR_KAMIKAZE_ENEMY = (255, 255, 0) # Amarillo (kamikaze)
-COLOR_DISPARO_JUGADOR = (0, 255, 0) # Verde
+# Eliminadas las constantes de color para entidades que ahora usan sprites (COLOR_JUGADOR, COLOR_NORMAL_ENEMY, etc.)
+COLOR_DISPARO_JUGADOR = (0, 255, 0) # Verde (los disparos aún se dibujan como rectángulos de color)
 
 # Nuevo color para los corazones "vacíos" (vidas perdidas)
 COLOR_CORAZON_PERDIDO = (50, 50, 50, 150) # Gris oscuro semi-transparente (con transparencia)
@@ -41,11 +39,28 @@ DASH_COOLDOWN_FRAMES = 180 # 3 segundos a 60 FPS
 DASH_DURATION_FRAMES = 15  # Duración del dash en frames
 DASH_VELOCIDAD_MULTIPLIER = 2.5 # Multiplicador de velocidad durante el dash
 
-# Rutas de imágenes
-# Obtener el directorio base del script actual
+# Rutas de recursos
+# ¡CORRECCIÓN FINAL DE BASE_DIR!
+# Como juego.py está en la carpeta raíz del proyecto (PROYECTO_JUEGO-DE-ZOMBIES),
+# BASE_DIR debe ser simplemente el directorio donde se encuentra este archivo.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Cargamos la spritesheet completa 'icons.png'
-SPRITESHEET_ICONS_PATH = os.path.join(BASE_DIR, 'assets\\image', 'icons.png') 
+
+# Agregamos una línea de depuración MUY IMPORTANTE aquí para ver la BASE_DIR calculada
+print(f"DEBUG JUEGO: BASE_DIR calculada: {BASE_DIR}")
+
+
+# Las rutas de los assets ahora se construyen correctamente desde BASE_DIR
+SPRITESHEET_ICONS_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'icons.png') 
+FONDO_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'floor.jpg')
+PLAYER_IMAGE_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'player.png')
+ENEMY_IMAGE_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zombie.png')
+
+# Agregamos depuración para las rutas completas de los assets
+print(f"DEBUG JUEGO: FONDO_PATH: {FONDO_PATH}")
+print(f"DEBUG JUEGO: PLAYER_IMAGE_PATH: {PLAYER_IMAGE_PATH}")
+print(f"DEBUG JUEGO: ENEMY_IMAGE_PATH: {ENEMY_IMAGE_PATH}")
+print(f"DEBUG JUEGO: SPRITESHEET_ICONS_PATH: {SPRITESHEET_ICONS_PATH}")
+
 
 # --- Funciones de Manejo de Entidades ---
 
@@ -97,7 +112,7 @@ def disparar_jugador(player_data, current_frames):
         return {
             'rect': pygame.Rect(player_data['rect'].centerx - bullet_ancho // 2, player_data['rect'].top - bullet_alto, bullet_ancho, bullet_alto),
             'velocidad': VELOCIDAD_DISPARO_JUGADOR,
-            'color': COLOR_DISPARO_JUGADOR,
+            'color': COLOR_DISPARO_JUGADOR, # Los disparos aún usan color y son rectángulos.
             'origen': 'jugador'
         }
     return None
@@ -125,23 +140,15 @@ def actualizar_dash_jugador(player_data):
     if player_data['dash_cooldown_timer'] > 0:
         player_data['dash_cooldown_timer'] -= 1
 
-def dibujar_jugador(pantalla, player_data, player_image, AZUL, BLANCO):
+def dibujar_jugador(pantalla, player_data, player_image): 
     """
     Dibuja el jugador en la pantalla.
     """
-
     pantalla.blit(player_image, player_data['rect'])
 
+    # El borde blanco para el dash se mantiene ya que es un efecto visual independiente del sprite base.
     if player_data['en_dash']:
-        pygame.draw.rect(pantalla, BLANCO, player_data['rect'].inflate(10, 10), 2, border_radius=5)
-
-    #if player_data['en_dash']:
-    #   # Dibujar un color diferente o efecto para el dash
-    #    pygame.draw.rect(pantalla, AZUL, player_data['rect'], border_radius=5)
-    #    # Borde blanco para efecto de dash
-    #    pygame.draw.rect(pantalla, BLANCO, player_data['rect'].inflate(10, 10), 2, border_radius=5)
-    #else:
-    #    pygame.draw.rect(pantalla, COLOR_JUGADOR, player_data['rect'], border_radius=5)
+        pygame.draw.rect(pantalla, (255, 255, 255), player_data['rect'].inflate(10, 10), 2, border_radius=5)
 
 
 def generar_enemigo(ANCHO_PANTALLA):
@@ -157,7 +164,6 @@ def generar_enemigo(ANCHO_PANTALLA):
     # Propiedades base
     velocidad_enemigo = VELOCIDAD_ENEMIGO_BASE
     vida_enemigo = 1
-    color_enemigo = COLOR_NORMAL_ENEMY
     puntaje_enemigo = PUNTAJE_NORMAL
     tipo_enemigo = "normal"
 
@@ -167,12 +173,10 @@ def generar_enemigo(ANCHO_PANTALLA):
         tipo_enemigo = "kamikaze"
         velocidad_enemigo = VELOCIDAD_ENEMIGO_BASE * FACTOR_VELOCIDAD_KAMIKAZE
         vida_enemigo = VIDA_KAMIKAZE
-        color_enemigo = COLOR_KAMIKAZE_ENEMY
         puntaje_enemigo = PUNTAJE_KAMIKAZE
     elif r < PROBABILIDAD_KAMIKAZE + PROBABILIDAD_BOOSTED: # Suma las probabilidades para que no se solapen
         tipo_enemigo = "boosted"
         velocidad_enemigo = VELOCIDAD_ENEMIGO_BASE * FACTOR_VELOCIDAD_BOOSTED
-        color_enemigo = COLOR_BOOSTED_ENEMY
         puntaje_enemigo = PUNTAJE_BOOSTED
     
     return {
@@ -180,7 +184,6 @@ def generar_enemigo(ANCHO_PANTALLA):
         'velocidad': velocidad_enemigo,
         'vida': vida_enemigo,
         'tipo': tipo_enemigo,
-        'color': color_enemigo,
         'puntos': puntaje_enemigo # Puntos que otorga al ser destruido
     }
 
@@ -191,14 +194,12 @@ def mover_enemigos(enemigos_list):
     for enemigo in enemigos_list:
         enemigo['rect'].y += enemigo['velocidad']
 
-def dibujar_enemigos(pantalla, enemigos_list, enemy_image):
+def dibujar_enemigos(pantalla, enemigos_list, enemy_image): 
     """
-    Dibuja todos los enemigos en la pantalla.
+    Dibuja todos los enemigos en la pantalla usando su sprite.
     """
     for enemigo in enemigos_list:
         pantalla.blit(enemy_image, enemigo['rect'])
-    #for enemigo in enemigos_list:
-    #   pygame.draw.rect(pantalla, enemigo['color'], enemigo['rect'], border_radius=3)
 
 def mover_disparos(disparos_list):
     """
@@ -304,51 +305,79 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
     Gestiona la lógica principal de la partida.
     Retorna el puntaje final y el nombre del jugador si el juego termina.
     """
-    FONDO_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'floor.jpg')
-    fondo_surface = pygame.image.load(FONDO_PATH).convert()
-    fondo_surface = pygame.transform.scale(fondo_surface, (ANCHO_PANTALLA, ALTO_PANTALLA))
-
-    PLAYER_IMAGE_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'player.png')
-    ENEMY_IMAGE_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zombie.png')
-
-    player_image = pygame.image.load(PLAYER_IMAGE_PATH).convert_alpha()
-    enemy_image = pygame.image.load(ENEMY_IMAGE_PATH).convert_alpha()
-
-# Escalar imágenes al tamaño del rectángulo
-    player_image = pygame.transform.scale(player_image, (50, 50))  # Tamaño del jugador
-    enemy_image = pygame.transform.scale(enemy_image, (40, 40))
-
-    # Variable local para la superficie del corazón
-    heart_surface_local = None 
-
-    # Cargar y procesar la imagen del corazón una vez
-    # Esta variable local se inicializará la primera vez que se llama a main_game_loop
-    # y mantendrá su valor en llamadas subsecuentes dentro de la misma ejecución del juego.
-    if heart_surface_local is None:
+    print("DEBUG JUEGO: Entrando a main_game_loop().") # DEBUG
+    # Cargar los recursos una única vez al iniciar el bucle del juego
+    # Usamos un atributo de la función para cachear las superficies de las imágenes.
+    # Esto asegura que se carguen solo la primera vez que se llama a main_game_loop,
+    # y se reutilicen en llamadas posteriores (si el juego vuelve a empezar).
+    if not hasattr(main_game_loop, 'resources_cached'):
+        main_game_loop.resources_cached = {}
         try:
-            # Cargar la spritesheet completa
+            print(f"DEBUG JUEGO: Intentando cargar fondo desde: {FONDO_PATH}") # DEBUG
+            # Cargar fondo
+            main_game_loop.resources_cached['fondo_surface'] = pygame.image.load(FONDO_PATH).convert()
+            main_game_loop.resources_cached['fondo_surface'] = pygame.transform.scale(
+                main_game_loop.resources_cached['fondo_surface'], (ANCHO_PANTALLA, ALTO_PANTALLA)
+            )
+            print("DEBUG JUEGO: Fondo cargado.") # DEBUG
+
+            print(f"DEBUG JUEGO: Intentando cargar jugador desde: {PLAYER_IMAGE_PATH}") # DEBUG
+            # Cargar imágenes de jugador y enemigo
+            main_game_loop.resources_cached['player_image'] = pygame.image.load(PLAYER_IMAGE_PATH).convert_alpha()
+            print("DEBUG JUEGO: Jugador cargado.") # DEBUG
+
+            print(f"DEBUG JUEGO: Intentando cargar enemigo desde: {ENEMY_IMAGE_PATH}") # DEBUG
+            main_game_loop.resources_cached['enemy_image'] = pygame.image.load(ENEMY_IMAGE_PATH).convert_alpha()
+            print("DEBUG JUEGO: Enemigo cargado.") # DEBUG
+
+            # Escalar imágenes al tamaño del rectángulo
+            main_game_loop.resources_cached['player_image'] = pygame.transform.scale(
+                main_game_loop.resources_cached['player_image'], (50, 50)
+            )
+            main_game_loop.resources_cached['enemy_image'] = pygame.transform.scale(
+                main_game_loop.resources_cached['enemy_image'], (40, 40)
+            )
+            print("DEBUG JUEGO: Imágenes escaladas.") # DEBUG
+
+            print(f"DEBUG JUEGO: Intentando cargar spritesheet de iconos desde: {SPRITESHEET_ICONS_PATH}") # DEBUG
+            # Cargar la spritesheet de iconos y extraer el corazón
             spritesheet = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha()
-
+            print("DEBUG JUEGO: Spritesheet de iconos cargada.") # DEBUG
             # Definir el rectángulo del corazón lleno en la spritesheet (x, y, ancho, alto)
-            # El corazón rojo completo está en (16,0) y mide 9x9 píxeles en la spritesheet de Minecraft
-            HEART_SPRITE_RECT_SOURCE = pygame.Rect(52, 0, 9, 9) #(el 52 marca la posicion donde esta el corazon rojo 
-            #                                                    del spirtesheet de minecraft, si lo quieren cambiar a 
-            #                                                    alguno vayan probando numeros) 
-
-            # Extraer el corazón lleno
-            heart_surface_local = spritesheet.subsurface(HEART_SPRITE_RECT_SOURCE)
+            # El corazón rojo completo está en (52,0) y mide 9x9 píxeles en la spritesheet de Minecraft
+            HEART_SPRITE_RECT_SOURCE = pygame.Rect(52, 0, 9, 9) 
+            main_game_loop.resources_cached['heart_surface_local'] = spritesheet.subsurface(HEART_SPRITE_RECT_SOURCE)
             
             # Escalar el corazón para que sea más visible
             SCALE_SIZE = (30, 30) # Tamaño deseado para los corazones en pantalla
-            heart_surface_local = pygame.transform.scale(heart_surface_local, SCALE_SIZE)
+            main_game_loop.resources_cached['heart_surface_local'] = pygame.transform.scale(
+                main_game_loop.resources_cached['heart_surface_local'], SCALE_SIZE
+            )
+            print("DEBUG JUEGO: Corazón extraído y escalado.") # DEBUG
 
         except pygame.error as e:
-            print(f"Error cargando o procesando la spritesheet de iconos: {e}")
-            # Fallback si no se puede cargar o procesar la imagen: un círculo rojo
-            temp_surface_full = pygame.Surface((30, 30), pygame.SRCALPHA)
-            pygame.draw.circle(temp_surface_full, (255, 0, 0, 255), (15, 15), 15) # Círculo rojo opaco
-            heart_surface_local = temp_surface_full
+            print(f"ERROR JUEGO: Error cargando recursos del juego: {e}")
+            # Fallback para todas las imágenes si hay un error
+            fallback_surface = pygame.Surface((50, 50), pygame.SRCALPHA)
+            pygame.draw.rect(fallback_surface, (255, 255, 255, 150), (0,0,50,50)) # Rectángulo blanco semi-transparente
+            
+            main_game_loop.resources_cached['fondo_surface'] = pygame.Surface((ANCHO_PANTALLA, ALTO_PANTALLA))
+            main_game_loop.resources_cached['fondo_surface'].fill(NEGRO) # Fondo negro por defecto
+            
+            main_game_loop.resources_cached['player_image'] = fallback_surface
+            main_game_loop.resources_cached['enemy_image'] = pygame.transform.scale(fallback_surface, (40, 40))
+            
+            temp_heart_surface = pygame.Surface((30, 30), pygame.SRCALPHA)
+            pygame.draw.circle(temp_heart_surface, (255, 0, 0, 255), (15, 15), 15) # Círculo rojo opaco para corazón
+            main_game_loop.resources_cached['heart_surface_local'] = temp_heart_surface
+            print("DEBUG JUEGO: Se usaron imágenes de fallback debido a un error de carga.") # DEBUG
 
+    # Obtener las superficies de las imágenes desde el caché
+    fondo_surface = main_game_loop.resources_cached['fondo_surface']
+    player_image = main_game_loop.resources_cached['player_image']
+    enemy_image = main_game_loop.resources_cached['enemy_image']
+    heart_surface_to_use = main_game_loop.resources_cached['heart_surface_local']
+    print("DEBUG JUEGO: Recursos listos para el bucle del juego.") # DEBUG
 
     reloj = pygame.time.Clock()
     fps = 60
@@ -405,24 +434,25 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         limpiar_entidades_fuera_pantalla(enemigos, player_bullets, ALTO_PANTALLA)
 
         # --- Dibujar ---
-        pantalla.blit(fondo_surface, (0, 0))
+        pantalla.blit(fondo_surface, (0, 0)) # Dibujar el fondo
 
-        dibujar_jugador(pantalla, player, player_image, AZUL, BLANCO) # Dibujar el jugador
+        dibujar_jugador(pantalla, player, player_image) # Dibujar el jugador
         dibujar_enemigos(pantalla, enemigos, enemy_image) # Dibujar todos los enemigos
         dibujar_disparos(pantalla, player_bullets) # Dibujar todos los disparos del jugador
 
         # Dibujar UI (vidas y puntaje)
+        # Asegurarse de pasar el argumento 'align' a draw_text
         draw_text(pantalla, f"Puntaje: {player['puntos']}", 15, 20, 24, BLANCO, "left", font=fuente_pequena)
         # Reemplazar el texto de vidas con los corazones
         # Pasamos el corazón rojo y el color para los corazones perdidos
-        dibujar_vidas_corazones(pantalla, player['vidas'], VIDAS_INICIALES, heart_surface_local, COLOR_CORAZON_PERDIDO)
+        dibujar_vidas_corazones(pantalla, player['vidas'], VIDAS_INICIALES, heart_surface_to_use, COLOR_CORAZON_PERDIDO)
         
         # Mostrar el estado del dash cooldown
         if player['dash_cooldown_timer'] > 0:
             tiempo_restante_dash = math.ceil(player['dash_cooldown_timer'] / fps)
-            draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 150, 10, 24, ROJO, "left", font=fuente_pequena)
+            draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 10, 20, 24, ROJO, "right", font=fuente_pequena)
         elif not player['en_dash']:
-            draw_text(pantalla, "Dash Listo", ANCHO_PANTALLA - 110, 20, 24, VERDE, "left", font=fuente_pequena)
+            draw_text(pantalla, "Dash Listo", ANCHO_PANTALLA - 10, 20, 24, VERDE, "right", font=fuente_pequena)
 
 
         pygame.display.flip() # Actualizar toda la pantalla
@@ -453,7 +483,7 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
 
         pantalla.fill(NEGRO) # Fondo negro para la pantalla de Game Over
         draw_text(pantalla, "GAME OVER", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 - 50, 74, ROJO, "center", font=game_over_font_title)
-        draw_text(pantalla, f"Puntaje Final: {player['puntos']}", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 20, 36, "center", BLANCO, font=game_over_font_score)
+        draw_text(pantalla, f"Puntaje Final: {player['puntos']}", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 20, 36, BLANCO, "center", font=game_over_font_score)
         draw_text(pantalla, "Ingresa tu nombre:", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 80, 36, BLANCO, "center", font=game_over_font_input)
         # Mostrar el nombre ingresado y un cursor simulado
         draw_text(pantalla, nombre_ingresado + "|", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 120, 36, BLANCO, "center", font=game_over_font_input)
