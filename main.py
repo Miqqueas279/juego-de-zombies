@@ -40,7 +40,7 @@ def main():
     while True:
         # Mostrar el menú principal y obtener la opción seleccionada
         # Pasamos todas las variables de configuración necesarias
-        opcion_menu = main_menu(PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, FUENTE_GRANDE, FUENTE_MEDIA, BLANCO, GRIS, NARANJA)
+        opcion_menu = main_menu(PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, FUENTE_MEDIA, BLANCO, GRIS, NARANJA)
 
         if opcion_menu == "jugar":
             # Iniciar el bucle principal de la partida
