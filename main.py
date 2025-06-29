@@ -4,7 +4,7 @@ import sys
 from juego import main_game_loop
 from menu import main_menu
 from ranking import show_ranking
-from utils import load_scores, save_scores # Las funciones de ranking ahora están en utils para simplificar las dependencias
+from utils.score import load_scores, save_scores # Las funciones de ranking ahora están en utils para simplificar las dependencias
 
 # --- Configuración Inicial de Pygame ---
 pygame.init()
@@ -39,7 +39,7 @@ def main():
     while True:
         # Mostrar el menú principal y obtener la opción seleccionada
         # Pasamos todas las variables de configuración necesarias
-        opcion_menu = main_menu(PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, FUENTE_GRANDE, FUENTE_MEDIA, NEGRO, BLANCO, GRIS, VERDE, ROJO)
+        opcion_menu = main_menu(PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, FUENTE_GRANDE, FUENTE_MEDIA, BLANCO, GRIS, VERDE)
 
         if opcion_menu == "jugar":
             # Iniciar el bucle principal de la partida
