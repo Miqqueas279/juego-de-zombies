@@ -242,6 +242,11 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list):
     """
     game_over = False
 
+    player_impact_sound = pygame.mixer.Sound("assets\\sounds\\impact.mp3")
+    player_impact_sound.set_volume(0.3)
+    enemy_impact_sound = pygame.mixer.Sound("assets\\sounds\\enemy_impact.mp3")
+    enemy_impact_sound.set_volume(0.1) 
+
     # Colisión disparos del jugador con enemigos
     i_bullet = len(player_bullets_list) - 1
     while i_bullet >= 0:
@@ -252,6 +257,7 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list):
             enemy = enemigos_list[j_enemy]
             if detectar_colision_rect(bullet['rect'], enemy['rect']):
                 enemy['vida'] -= 1
+                enemy_impact_sound.play()
                 bullet_hit = True # La bala impactó, debe ser eliminada
                 if enemy['vida'] <= 0:
                     player_data['puntos'] += enemy['puntos'] # Sumar puntos por enemigo destruido
@@ -269,6 +275,7 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list):
         enemy = enemigos_list[i_enemy]
         if detectar_colision_rect(player_data['rect'], enemy['rect']):
             player_data['vidas'] -= 1
+            player_impact_sound.play()
             del enemigos_list[i_enemy] # El enemigo se destruye al impactar al jugador
             if player_data['vidas'] <= 0:
                 game_over = True # Juego terminado
