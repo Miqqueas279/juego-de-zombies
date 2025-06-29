@@ -1,10 +1,9 @@
 import pygame
-import os # Importar os para manejar rutas
+import os 
 from utils.button import create_button, draw_button, is_button_clicked
-from utils.text import draw_text # Importar draw_text para dibujar el título del menú
+from utils.text import draw_text
 
 # Definir BASE_DIR aquí para que las rutas relativas funcionen
-# Apunta al directorio del archivo actual (menu.py)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # --- Menú Principal ---
@@ -19,50 +18,25 @@ def main_menu(screen: pygame.Surface, width: int, height: int, font_title: pygam
     background_img_path = os.path.join(BASE_DIR, 'assets', 'image', 'background.jpg')
     weapon_icon_path = os.path.join(BASE_DIR, 'assets', 'image', 'weapon.png') # Ruta del icono de arma
 
-    title_img = None
-    background_img = None
-    icon_img = None # Inicializar icon_img por si la carga falla
+    # Carga directa de imágenes (sin try-except)
+    title_img = pygame.image.load(title_img_path).convert_alpha()
+    title_img = pygame.transform.scale(title_img, (400, 100))
 
-    try:
-        title_img = pygame.image.load(title_img_path).convert_alpha()
-        title_img = pygame.transform.scale(title_img, (400, 100))
-    except pygame.error as e:
-        print(f"Error cargando imagen del título en menu.py: {e}")
-        # Fallback a una superficie de texto si la imagen no carga
-        temp_surface = pygame.Surface((400, 100), pygame.SRCALPHA)
-        temp_surface.fill((0, 0, 0, 0)) # Transparente
-        draw_text(temp_surface, "Cielo Letal", 200, 50, font_title.get_height(), text_color, "center", font=font_title)
-        title_img = temp_surface
+    background_img = pygame.image.load(background_img_path).convert()
+    background_img = pygame.transform.scale(background_img, (width, height))
 
-    try:
-        background_img = pygame.image.load(background_img_path).convert()
-        background_img = pygame.transform.scale(background_img, (width, height))
-    except pygame.error as e:
-        print(f"Error cargando imagen de fondo en menu.py: {e}")
-        # Fallback a un color sólido si la imagen no carga
-        background_img = pygame.Surface((width, height))
-        background_img.fill(background_color)
+    # Carga de icono (si se usa)
+    icon_img = pygame.image.load(weapon_icon_path).convert_alpha()
+    icon_img = pygame.transform.scale(icon_img, (30, 30))
 
-    try:
-        icon_img = pygame.image.load(weapon_icon_path).convert_alpha()
-        icon_img = pygame.transform.scale(icon_img, (30, 30))
-    except pygame.error as e:
-        print(f"Error cargando imagen de icono en menu.py: {e}")
-        icon_img = None # Si falla, el icono no se usará.
-
-    # Cargar sonidos
-    sound_click = None
-    sound_hover = None
-    try:
-        sound_click_path = os.path.join(BASE_DIR, 'assets', 'sounds', 'shoot.mp3')
-        sound_hover_path = os.path.join(BASE_DIR, 'assets', 'sounds', 'selection.mp3')
-        
-        sound_click = pygame.mixer.Sound(sound_click_path)
-        sound_hover = pygame.mixer.Sound(sound_hover_path)
-        sound_click.set_volume(0.1)
-        sound_hover.set_volume(0.1)
-    except pygame.error as e:
-        print(f"Error cargando sonidos en menu.py: {e}")
+    # Cargar sonidos (sin try-except)
+    sound_click_path = os.path.join(BASE_DIR, 'assets', 'sounds', 'shoot.mp3')
+    sound_hover_path = os.path.join(BASE_DIR, 'assets', 'sounds', 'selection.mp3')
+    
+    sound_click = pygame.mixer.Sound(sound_click_path)
+    sound_hover = pygame.mixer.Sound(sound_hover_path)
+    sound_click.set_volume(0.1)
+    sound_hover.set_volume(0.1)
 
     buttons_hover_prev = set()
 
@@ -81,8 +55,7 @@ def main_menu(screen: pygame.Surface, width: int, height: int, font_title: pygam
         for button in buttons:
             if button['rect'].collidepoint(mouse_pos):
                 if button['texto'] not in buttons_hover_prev:
-                    if sound_hover:
-                        sound_hover.play()
+                    sound_hover.play()
                     buttons_hover_prev.add(button['texto'])
             else:
                 buttons_hover_prev.discard(button['texto'])
@@ -94,8 +67,7 @@ def main_menu(screen: pygame.Surface, width: int, height: int, font_title: pygam
                 if event.button == 1: # Click izquierdo del mouse
                     for button in buttons:
                         if is_button_clicked(button, mouse_pos):
-                            if sound_click:
-                                sound_click.play()
+                            sound_click.play()
                             pygame.time.delay(1000)  # Espera breve para oír el sound
                             return button['action'] # Retornar la acción del botón seleccionado
 
@@ -106,8 +78,6 @@ def main_menu(screen: pygame.Surface, width: int, height: int, font_title: pygam
 
         # Dibujar todos los botones
         for button in buttons:
-            # Asegurarse de que los argumentos pasados coincidan con la firma de draw_button
-            # draw_button(screen, button, mouse_pos, button_color, button_hover, button_font, text_color, border_color)
             draw_button(screen, button, mouse_pos, button_color, button_hover, button_font, text_color, border_color)
 
         pygame.display.flip() # Actualizar la pantalla

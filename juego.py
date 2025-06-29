@@ -40,14 +40,9 @@ DASH_DURATION_FRAMES = 15  # Duración del dash en frames
 DASH_VELOCIDAD_MULTIPLIER = 2.5 # Multiplicador de velocidad durante el dash
 
 # Rutas de recursos
-# ¡CORRECCIÓN FINAL DE BASE_DIR!
 # Como juego.py está en la carpeta raíz del proyecto (PROYECTO_JUEGO-DE-ZOMBIES),
 # BASE_DIR debe ser simplemente el directorio donde se encuentra este archivo.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Agregamos una línea de depuración MUY IMPORTANTE aquí para ver la BASE_DIR calculada
-print(f"DEBUG JUEGO: BASE_DIR calculada: {BASE_DIR}")
-
 
 # Las rutas de los assets ahora se construyen correctamente desde BASE_DIR
 SPRITESHEET_ICONS_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'icons.png') 
@@ -55,11 +50,9 @@ FONDO_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'floor.jpg')
 PLAYER_IMAGE_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'player.png')
 ENEMY_IMAGE_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zombie.png')
 
-# Agregamos depuración para las rutas completas de los assets
-print(f"DEBUG JUEGO: FONDO_PATH: {FONDO_PATH}")
-print(f"DEBUG JUEGO: PLAYER_IMAGE_PATH: {PLAYER_IMAGE_PATH}")
-print(f"DEBUG JUEGO: ENEMY_IMAGE_PATH: {ENEMY_IMAGE_PATH}")
-print(f"DEBUG JUEGO: SPRITESHEET_ICONS_PATH: {SPRITESHEET_ICONS_PATH}")
+# Rutas para los nuevos sonidos
+SOUND_IMPACT_PATH = os.path.join(BASE_DIR, 'assets', 'sounds', 'impact.mp3')
+SOUND_ENEMY_IMPACT_PATH = os.path.join(BASE_DIR, 'assets', 'sounds', 'enemy_impact.mp3')
 
 
 # --- Funciones de Manejo de Entidades ---
@@ -235,17 +228,12 @@ def limpiar_entidades_fuera_pantalla(enemigos_list, disparos_list, ALTO_PANTALLA
             del disparos_list[i]
         i -= 1
 
-def manejar_colisiones(player_data, enemigos_list, player_bullets_list):
+def manejar_colisiones(player_data, enemigos_list, player_bullets_list, player_impact_sound, enemy_impact_sound): # Añadidos parámetros de sonido
     """
     Maneja todas las colisiones entre entidades y actualiza vidas/puntos.
     Retorna True si el juego termina (vidas del jugador <= 0), False en caso contrario.
     """
     game_over = False
-
-    player_impact_sound = pygame.mixer.Sound("assets\\sounds\\impact.mp3")
-    player_impact_sound.set_volume(0.3)
-    enemy_impact_sound = pygame.mixer.Sound("assets\\sounds\\enemy_impact.mp3")
-    enemy_impact_sound.set_volume(0.1) 
 
     # Colisión disparos del jugador con enemigos
     i_bullet = len(player_bullets_list) - 1
@@ -257,7 +245,7 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list):
             enemy = enemigos_list[j_enemy]
             if detectar_colision_rect(bullet['rect'], enemy['rect']):
                 enemy['vida'] -= 1
-                enemy_impact_sound.play()
+                enemy_impact_sound.play() # Reproducir sonido
                 bullet_hit = True # La bala impactó, debe ser eliminada
                 if enemy['vida'] <= 0:
                     player_data['puntos'] += enemy['puntos'] # Sumar puntos por enemigo destruido
@@ -275,7 +263,7 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list):
         enemy = enemigos_list[i_enemy]
         if detectar_colision_rect(player_data['rect'], enemy['rect']):
             player_data['vidas'] -= 1
-            player_impact_sound.play()
+            player_impact_sound.play() # Reproducir sonido
             del enemigos_list[i_enemy] # El enemigo se destruye al impactar al jugador
             if player_data['vidas'] <= 0:
                 game_over = True # Juego terminado
@@ -299,8 +287,8 @@ def dibujar_vidas_corazones(pantalla, vidas_actuales, vidas_maximas, heart_image
         else:
             # Dibujar un rectángulo gris oscuro semi-transparente para la vida perdida
             lost_heart_rect = pygame.Rect(x_offset + i * spacing, y_offset, 
-                                          heart_image_surface.get_width(), 
-                                          heart_image_surface.get_height()) 
+                                        heart_image_surface.get_width(), 
+                                        heart_image_surface.get_height()) 
             s = pygame.Surface(lost_heart_rect.size, pygame.SRCALPHA) # Superficie con canal alfa
             s.fill(lost_heart_color) # Rellenar con el color gris oscuro semi-transparente
             pantalla.blit(s, lost_heart_rect)
@@ -312,79 +300,61 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
     Gestiona la lógica principal de la partida.
     Retorna el puntaje final y el nombre del jugador si el juego termina.
     """
-    print("DEBUG JUEGO: Entrando a main_game_loop().") # DEBUG
     # Cargar los recursos una única vez al iniciar el bucle del juego
-    # Usamos un atributo de la función para cachear las superficies de las imágenes.
+    # Usamos un atributo de la función para cachear las superficies de las imágenes y sonidos.
     # Esto asegura que se carguen solo la primera vez que se llama a main_game_loop,
     # y se reutilicen en llamadas posteriores (si el juego vuelve a empezar).
     if not hasattr(main_game_loop, 'resources_cached'):
         main_game_loop.resources_cached = {}
-        try:
-            print(f"DEBUG JUEGO: Intentando cargar fondo desde: {FONDO_PATH}") # DEBUG
-            # Cargar fondo
-            main_game_loop.resources_cached['fondo_surface'] = pygame.image.load(FONDO_PATH).convert()
-            main_game_loop.resources_cached['fondo_surface'] = pygame.transform.scale(
-                main_game_loop.resources_cached['fondo_surface'], (ANCHO_PANTALLA, ALTO_PANTALLA)
-            )
-            print("DEBUG JUEGO: Fondo cargado.") # DEBUG
+        # Carga directa de todos los recursos (sin try-except)
+        # Cargar fondo
+        main_game_loop.resources_cached['fondo_surface'] = pygame.image.load(FONDO_PATH).convert()
+        main_game_loop.resources_cached['fondo_surface'] = pygame.transform.scale(
+            main_game_loop.resources_cached['fondo_surface'], (ANCHO_PANTALLA, ALTO_PANTALLA)
+        )
 
-            print(f"DEBUG JUEGO: Intentando cargar jugador desde: {PLAYER_IMAGE_PATH}") # DEBUG
-            # Cargar imágenes de jugador y enemigo
-            main_game_loop.resources_cached['player_image'] = pygame.image.load(PLAYER_IMAGE_PATH).convert_alpha()
-            print("DEBUG JUEGO: Jugador cargado.") # DEBUG
+        # Cargar imágenes de jugador y enemigo
+        main_game_loop.resources_cached['player_image'] = pygame.image.load(PLAYER_IMAGE_PATH).convert_alpha()
+        main_game_loop.resources_cached['enemy_image'] = pygame.image.load(ENEMY_IMAGE_PATH).convert_alpha()
 
-            print(f"DEBUG JUEGO: Intentando cargar enemigo desde: {ENEMY_IMAGE_PATH}") # DEBUG
-            main_game_loop.resources_cached['enemy_image'] = pygame.image.load(ENEMY_IMAGE_PATH).convert_alpha()
-            print("DEBUG JUEGO: Enemigo cargado.") # DEBUG
+        # Escalar imágenes al tamaño del rectángulo
+        main_game_loop.resources_cached['player_image'] = pygame.transform.scale(
+            main_game_loop.resources_cached['player_image'], (50, 50)
+        )
+        main_game_loop.resources_cached['enemy_image'] = pygame.transform.scale(
+            main_game_loop.resources_cached['enemy_image'], (40, 40)
+        )
 
-            # Escalar imágenes al tamaño del rectángulo
-            main_game_loop.resources_cached['player_image'] = pygame.transform.scale(
-                main_game_loop.resources_cached['player_image'], (50, 50)
-            )
-            main_game_loop.resources_cached['enemy_image'] = pygame.transform.scale(
-                main_game_loop.resources_cached['enemy_image'], (40, 40)
-            )
-            print("DEBUG JUEGO: Imágenes escaladas.") # DEBUG
+        # Cargar la spritesheet de iconos y extraer el corazón
+        spritesheet = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha()
+        # Definir el rectángulo del corazón lleno en la spritesheet (x, y, ancho, alto)
+        # El corazón rojo completo está en (52,0) y mide 9x9 píxeles en la spritesheet de Minecraft
+        HEART_SPRITE_RECT_SOURCE = pygame.Rect(52, 0, 9, 9) 
+        main_game_loop.resources_cached['heart_surface_local'] = spritesheet.subsurface(HEART_SPRITE_RECT_SOURCE)
+        
+        # Escalar el corazón para que sea más visible
+        SCALE_SIZE = (30, 30) # Tamaño deseado para los corazones en pantalla
+        main_game_loop.resources_cached['heart_surface_local'] = pygame.transform.scale(
+            main_game_loop.resources_cached['heart_surface_local'], SCALE_SIZE
+        )
 
-            print(f"DEBUG JUEGO: Intentando cargar spritesheet de iconos desde: {SPRITESHEET_ICONS_PATH}") # DEBUG
-            # Cargar la spritesheet de iconos y extraer el corazón
-            spritesheet = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha()
-            print("DEBUG JUEGO: Spritesheet de iconos cargada.") # DEBUG
-            # Definir el rectángulo del corazón lleno en la spritesheet (x, y, ancho, alto)
-            # El corazón rojo completo está en (52,0) y mide 9x9 píxeles en la spritesheet de Minecraft
-            HEART_SPRITE_RECT_SOURCE = pygame.Rect(52, 0, 9, 9) 
-            main_game_loop.resources_cached['heart_surface_local'] = spritesheet.subsurface(HEART_SPRITE_RECT_SOURCE)
-            
-            # Escalar el corazón para que sea más visible
-            SCALE_SIZE = (30, 30) # Tamaño deseado para los corazones en pantalla
-            main_game_loop.resources_cached['heart_surface_local'] = pygame.transform.scale(
-                main_game_loop.resources_cached['heart_surface_local'], SCALE_SIZE
-            )
-            print("DEBUG JUEGO: Corazón extraído y escalado.") # DEBUG
+        # Cargar sonidos y almacenarlos en caché
+        player_impact_sound = pygame.mixer.Sound(SOUND_IMPACT_PATH)
+        player_impact_sound.set_volume(0.3)
+        main_game_loop.resources_cached['player_impact_sound'] = player_impact_sound
 
-        except pygame.error as e:
-            print(f"ERROR JUEGO: Error cargando recursos del juego: {e}")
-            # Fallback para todas las imágenes si hay un error
-            fallback_surface = pygame.Surface((50, 50), pygame.SRCALPHA)
-            pygame.draw.rect(fallback_surface, (255, 255, 255, 150), (0,0,50,50)) # Rectángulo blanco semi-transparente
-            
-            main_game_loop.resources_cached['fondo_surface'] = pygame.Surface((ANCHO_PANTALLA, ALTO_PANTALLA))
-            main_game_loop.resources_cached['fondo_surface'].fill(NEGRO) # Fondo negro por defecto
-            
-            main_game_loop.resources_cached['player_image'] = fallback_surface
-            main_game_loop.resources_cached['enemy_image'] = pygame.transform.scale(fallback_surface, (40, 40))
-            
-            temp_heart_surface = pygame.Surface((30, 30), pygame.SRCALPHA)
-            pygame.draw.circle(temp_heart_surface, (255, 0, 0, 255), (15, 15), 15) # Círculo rojo opaco para corazón
-            main_game_loop.resources_cached['heart_surface_local'] = temp_heart_surface
-            print("DEBUG JUEGO: Se usaron imágenes de fallback debido a un error de carga.") # DEBUG
+        enemy_impact_sound = pygame.mixer.Sound(SOUND_ENEMY_IMPACT_PATH)
+        enemy_impact_sound.set_volume(0.1)
+        main_game_loop.resources_cached['enemy_impact_sound'] = enemy_impact_sound
 
-    # Obtener las superficies de las imágenes desde el caché
+
+    # Obtener las superficies e instancias de sonido desde el caché
     fondo_surface = main_game_loop.resources_cached['fondo_surface']
     player_image = main_game_loop.resources_cached['player_image']
     enemy_image = main_game_loop.resources_cached['enemy_image']
     heart_surface_to_use = main_game_loop.resources_cached['heart_surface_local']
-    print("DEBUG JUEGO: Recursos listos para el bucle del juego.") # DEBUG
+    player_impact_sound = main_game_loop.resources_cached['player_impact_sound'] # Obtener el sonido cacheado
+    enemy_impact_sound = main_game_loop.resources_cached['enemy_impact_sound'] # Obtener el sonido cacheado
 
     reloj = pygame.time.Clock()
     fps = 60
@@ -432,8 +402,8 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         mover_disparos(player_bullets)
 
         # --- Colisiones ---
-        # La función de colisiones también elimina los objetos impactados y actualiza puntos/vidas
-        game_over = manejar_colisiones(player, enemigos, player_bullets)
+        # Pasar los objetos de sonido ya cargados a la función de colisiones
+        game_over = manejar_colisiones(player, enemigos, player_bullets, player_impact_sound, enemy_impact_sound)
         if game_over:
             running = False # Si el jugador pierde todas las vidas, terminar el juego
 

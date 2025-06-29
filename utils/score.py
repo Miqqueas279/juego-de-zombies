@@ -12,26 +12,17 @@ def load_scores():
     """
     Carga los puntajes desde el archivo JSON.
     Si el archivo no existe, devuelve una lista vacía.
-    Maneja errores si el archivo existe pero su contenido no es un JSON válido o no es una lista.
+    Si el contenido no es un JSON válido o no es una lista, devuelve una lista vacía.
     """
     if not os.path.exists(SCORES_FILE):
         return []
-    try:
-        with open(SCORES_FILE, 'r') as f:
-            scores = json.load(f)
-            # Asegurarse de que scores sea una lista
-            if not isinstance(scores, list):
-                print(f"Advertencia: El contenido del archivo de puntajes '{SCORES_FILE}' no es una lista válida. Se reiniciará.")
-                return []
-            return scores
-    except json.JSONDecodeError:
-        # Si el archivo JSON está corrupto o vacío, retornar lista vacía
-        print(f"Advertencia: El archivo de puntajes '{SCORES_FILE}' está corrupto o vacío. Se creará uno nuevo.")
-        return []
-    except Exception as e:
-        # Captura cualquier otra excepción inesperada durante la carga
-        print(f"Error inesperado al cargar puntajes desde '{SCORES_FILE}': {e}")
-        return []
+    
+    with open(SCORES_FILE, 'r') as f:
+        scores = json.load(f)
+        # Asegurarse de que scores sea una lista
+        if not isinstance(scores, list):
+            return []
+        return scores
 
 
 def save_scores(scores):
@@ -66,12 +57,8 @@ def save_scores(scores):
     # Asegúrate de que esta carpeta esté dentro de 'assets' como en tu estructura
     os.makedirs(os.path.dirname(SCORES_FILE), exist_ok=True)
 
-    try:
-        with open(SCORES_FILE, 'w') as f:
-            json.dump(top_5_scores, f, indent=4) # Guardar como JSON con formato legible
-    except Exception as e:
-        print(f"Error al guardar puntajes en '{SCORES_FILE}': {e}")
-
+    with open(SCORES_FILE, 'w') as f:
+        json.dump(top_5_scores, f, indent=4) # Guardar como JSON con formato legible
 
 def detectar_colision_rect(rect1, rect2):
     """

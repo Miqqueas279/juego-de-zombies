@@ -13,11 +13,8 @@ def get_font(size):
     # Construir la ruta absoluta a la fuente desde la raíz del proyecto
     ruta_fuente = os.path.join(BASE_DIR, 'assets', 'fonts', 'Zombies.otf')
     
-    if os.path.exists(ruta_fuente):
-        return pygame.font.Font(ruta_fuente, size)
-    else:
-        print(f"Advertencia: Fuente 'Zombies.otf' no encontrada en '{ruta_fuente}'. Usando fuente predeterminada de Pygame.")
-        return pygame.font.Font(None, size) # Fallback a fuente por defecto de Pygame
+    # Carga directa de la fuente (sin try-except)
+    return pygame.font.Font(ruta_fuente, size) # Se asume que la fuente existe y se carga correctamente
 
 def draw_text(pantalla, texto, x, y, tamano_fuente, color, align, font=None ):
     """
