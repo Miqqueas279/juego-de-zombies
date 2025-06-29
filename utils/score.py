@@ -1,40 +1,10 @@
-import pygame
 import json
 import os
 
-# --- Funciones Auxiliares Generales ---
-
-def get_font(size):
-    """
-    Obtiene una fuente por defecto de Pygame del tamaño especificado.
-    Útil para asegurar que las fuentes estén disponibles.
-    """
-    return pygame.font.Font(None, size)
-
-def detectar_colision_rect(rect1, rect2):
-    """
-    Detecta si dos objetos pygame.Rect están colisionando.
-    """
-    return rect1.colliderect(rect2)
-
-def dibujar_texto(pantalla, texto, x, y, tamano_fuente, color, fuente=None):
-    """
-    Dibuja texto en la pantalla centrado en las coordenadas dadas.
-    Si no se proporciona una fuente, usa una por defecto.
-    """
-    if fuente is None:
-        fuente_obj = get_font(tamano_fuente) # Usar la función get_font
-    else:
-        fuente_obj = fuente
-
-    superficie_texto = fuente_obj.render(texto, True, color)
-    rect_texto = superficie_texto.get_rect(center=(x, y))
-    pantalla.blit(superficie_texto, rect_texto)
-
-# --- Manejo de Puntajes (separado aquí para que juego.py y ranking.py lo importen) ---
+# --- Manejo de puntajes (separado aquí para que juego.py y ranking.py lo importen) ---
 # Asegúrate de que la carpeta 'datos' exista.
 # Esto es para que funcione en entornos donde se ejecuta desde un directorio diferente
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 SCORES_FILE = os.path.join(BASE_DIR, 'datos', 'puntajes.json')
 
 def load_scores():
@@ -86,3 +56,9 @@ def save_scores(scores):
 
     with open(SCORES_FILE, 'w') as f:
         json.dump(top_5_scores, f, indent=4) # Guardar como JSON con formato legible
+
+def detectar_colision_rect(rect1, rect2):
+    """
+    Detecta si dos objetos pygame.Rect están colisionando.
+    """
+    return rect1.colliderect(rect2)

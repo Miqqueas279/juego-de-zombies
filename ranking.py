@@ -1,5 +1,6 @@
 import pygame
-from utils import dibujar_texto, load_scores, get_font # Importamos funciones de utils
+from utils.score import load_scores # Importamos funciones de utils
+from utils.text import draw_text, get_font
 
 # --- Pantalla de Ranking ---
 def show_ranking(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_titulo, fuente_lista, color_fondo, color_texto, scores):
@@ -42,20 +43,20 @@ def show_ranking(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_titulo, fuente_
         pantalla.fill(color_fondo) # Rellenar el fondo
 
         # Título del Ranking
-        dibujar_texto(pantalla, "Ranking", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 4 - 50, fuente_titulo.get_height(), color_texto, fuente=fuente_titulo)
+        draw_text(pantalla, "Ranking", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 4 - 50, fuente_titulo.get_height(), color_texto, "left", font=fuente_titulo)
 
         # Mostrar los puntajes
         y_offset = ALTO_PANTALLA // 4 + 50
         if not scores_a_mostrar:
-            dibujar_texto(pantalla, "No hay puntajes aún.", ANCHO_PANTALLA // 2, y_offset, fuente_lista.get_height(), color_texto, fuente=fuente_lista)
+            draw_text(pantalla, "No hay puntajes aún.", ANCHO_PANTALLA // 2, y_offset, fuente_lista.get_height(), "left", color_texto, font=fuente_lista)
         else:
             for i in range(len(scores_a_mostrar)):
                 score = scores_a_mostrar[i]
                 texto = f"{i+1}. {score['nombre']} - {score['puntaje']}"
-                dibujar_texto(pantalla, texto, ANCHO_PANTALLA // 2, y_offset + i * 50, fuente_lista.get_height(), color_texto, fuente=fuente_lista)
+                draw_text(pantalla, texto, ANCHO_PANTALLA // 2, y_offset + i * 50, fuente_lista.get_height(), color_texto, "left", font=fuente_lista)
 
         # Instrucción para volver
         # Usar una fuente pequeña por defecto para esto.
-        dibujar_texto(pantalla, "Presiona ESC o ENTER para volver", ANCHO_PANTALLA // 2, ALTO_PANTALLA - 50, 24, color_texto, fuente=get_font(24))
+        draw_text(pantalla, "Presiona ESC o ENTER para volver", ANCHO_PANTALLA // 2, ALTO_PANTALLA - 50, 24, color_texto, "left", font=get_font(24))
 
         pygame.display.flip() # Actualizar la pantalla

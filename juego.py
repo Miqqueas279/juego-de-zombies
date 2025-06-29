@@ -3,7 +3,8 @@ import random
 import math
 import os # Importar os para manejar rutas de archivos
 
-from utils import dibujar_texto, detectar_colision_rect, get_font # Importar funciones auxiliares
+from utils.score import detectar_colision_rect # Importar funciones auxiliares
+from utils.text import draw_text, get_font
 
 # --- Constantes del Juego ---
 COLOR_JUGADOR = (0, 0, 255)  # Azul
@@ -44,7 +45,7 @@ DASH_VELOCIDAD_MULTIPLIER = 2.5 # Multiplicador de velocidad durante el dash
 # Obtener el directorio base del script actual
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Cargamos la spritesheet completa 'icons.png'
-SPRITESHEET_ICONS_PATH = os.path.join(BASE_DIR, 'image', 'icons.png') 
+SPRITESHEET_ICONS_PATH = os.path.join(BASE_DIR, 'assets\\image', 'icons.png') 
 
 # --- Funciones de Manejo de Entidades ---
 
@@ -124,17 +125,23 @@ def actualizar_dash_jugador(player_data):
     if player_data['dash_cooldown_timer'] > 0:
         player_data['dash_cooldown_timer'] -= 1
 
-def dibujar_jugador(pantalla, player_data, AZUL, BLANCO):
+def dibujar_jugador(pantalla, player_data, player_image, AZUL, BLANCO):
     """
     Dibuja el jugador en la pantalla.
     """
+
+    pantalla.blit(player_image, player_data['rect'])
+
     if player_data['en_dash']:
-        # Dibujar un color diferente o efecto para el dash
-        pygame.draw.rect(pantalla, AZUL, player_data['rect'], border_radius=5)
-        # Borde blanco para efecto de dash
         pygame.draw.rect(pantalla, BLANCO, player_data['rect'].inflate(10, 10), 2, border_radius=5)
-    else:
-        pygame.draw.rect(pantalla, COLOR_JUGADOR, player_data['rect'], border_radius=5)
+
+    #if player_data['en_dash']:
+    #   # Dibujar un color diferente o efecto para el dash
+    #    pygame.draw.rect(pantalla, AZUL, player_data['rect'], border_radius=5)
+    #    # Borde blanco para efecto de dash
+    #    pygame.draw.rect(pantalla, BLANCO, player_data['rect'].inflate(10, 10), 2, border_radius=5)
+    #else:
+    #    pygame.draw.rect(pantalla, COLOR_JUGADOR, player_data['rect'], border_radius=5)
 
 
 def generar_enemigo(ANCHO_PANTALLA):
@@ -184,12 +191,14 @@ def mover_enemigos(enemigos_list):
     for enemigo in enemigos_list:
         enemigo['rect'].y += enemigo['velocidad']
 
-def dibujar_enemigos(pantalla, enemigos_list):
+def dibujar_enemigos(pantalla, enemigos_list, enemy_image):
     """
     Dibuja todos los enemigos en la pantalla.
     """
     for enemigo in enemigos_list:
-        pygame.draw.rect(pantalla, enemigo['color'], enemigo['rect'], border_radius=3)
+        pantalla.blit(enemy_image, enemigo['rect'])
+    #for enemigo in enemigos_list:
+    #   pygame.draw.rect(pantalla, enemigo['color'], enemigo['rect'], border_radius=3)
 
 def mover_disparos(disparos_list):
     """
@@ -295,6 +304,20 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
     Gestiona la lógica principal de la partida.
     Retorna el puntaje final y el nombre del jugador si el juego termina.
     """
+    FONDO_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'floor.jpg')
+    fondo_surface = pygame.image.load(FONDO_PATH).convert()
+    fondo_surface = pygame.transform.scale(fondo_surface, (ANCHO_PANTALLA, ALTO_PANTALLA))
+
+    PLAYER_IMAGE_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'player.png')
+    ENEMY_IMAGE_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zombie.png')
+
+    player_image = pygame.image.load(PLAYER_IMAGE_PATH).convert_alpha()
+    enemy_image = pygame.image.load(ENEMY_IMAGE_PATH).convert_alpha()
+
+# Escalar imágenes al tamaño del rectángulo
+    player_image = pygame.transform.scale(player_image, (50, 50))  # Tamaño del jugador
+    enemy_image = pygame.transform.scale(enemy_image, (40, 40))
+
     # Variable local para la superficie del corazón
     heart_surface_local = None 
 
@@ -382,14 +405,14 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         limpiar_entidades_fuera_pantalla(enemigos, player_bullets, ALTO_PANTALLA)
 
         # --- Dibujar ---
-        pantalla.fill(NEGRO) # Rellenar el fondo de negro (pueden reemplazarlo con una imagen)
+        pantalla.blit(fondo_surface, (0, 0))
 
-        dibujar_jugador(pantalla, player, AZUL, BLANCO) # Dibujar el jugador
-        dibujar_enemigos(pantalla, enemigos) # Dibujar todos los enemigos
+        dibujar_jugador(pantalla, player, player_image, AZUL, BLANCO) # Dibujar el jugador
+        dibujar_enemigos(pantalla, enemigos, enemy_image) # Dibujar todos los enemigos
         dibujar_disparos(pantalla, player_bullets) # Dibujar todos los disparos del jugador
 
         # Dibujar UI (vidas y puntaje)
-        dibujar_texto(pantalla, f"Puntaje: {player['puntos']}", 10, 10, 24, BLANCO, fuente=fuente_pequena)
+        draw_text(pantalla, f"Puntaje: {player['puntos']}", 15, 20, 24, BLANCO, "left", font=fuente_pequena)
         # Reemplazar el texto de vidas con los corazones
         # Pasamos el corazón rojo y el color para los corazones perdidos
         dibujar_vidas_corazones(pantalla, player['vidas'], VIDAS_INICIALES, heart_surface_local, COLOR_CORAZON_PERDIDO)
@@ -397,9 +420,9 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         # Mostrar el estado del dash cooldown
         if player['dash_cooldown_timer'] > 0:
             tiempo_restante_dash = math.ceil(player['dash_cooldown_timer'] / fps)
-            dibujar_texto(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 150, 10, 24, ROJO, fuente=fuente_pequena)
+            draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 150, 10, 24, ROJO, "left", font=fuente_pequena)
         elif not player['en_dash']:
-            dibujar_texto(pantalla, "Dash Listo", ANCHO_PANTALLA - 150, 10, 24, VERDE, fuente=fuente_pequena)
+            draw_text(pantalla, "Dash Listo", ANCHO_PANTALLA - 110, 20, 24, VERDE, "left", font=fuente_pequena)
 
 
         pygame.display.flip() # Actualizar toda la pantalla
@@ -429,11 +452,11 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
                     nombre_ingresado += event.unicode
 
         pantalla.fill(NEGRO) # Fondo negro para la pantalla de Game Over
-        dibujar_texto(pantalla, "GAME OVER", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 - 50, 74, ROJO, fuente=game_over_font_title)
-        dibujar_texto(pantalla, f"Puntaje Final: {player['puntos']}", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 20, 36, BLANCO, fuente=game_over_font_score)
-        dibujar_texto(pantalla, "Ingresa tu nombre:", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 80, 36, BLANCO, fuente=game_over_font_input)
+        draw_text(pantalla, "GAME OVER", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 - 50, 74, ROJO, "center", font=game_over_font_title)
+        draw_text(pantalla, f"Puntaje Final: {player['puntos']}", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 20, 36, "center", BLANCO, font=game_over_font_score)
+        draw_text(pantalla, "Ingresa tu nombre:", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 80, 36, BLANCO, "center", font=game_over_font_input)
         # Mostrar el nombre ingresado y un cursor simulado
-        dibujar_texto(pantalla, nombre_ingresado + "|", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 120, 36, BLANCO, fuente=game_over_font_input)
+        draw_text(pantalla, nombre_ingresado + "|", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 120, 36, BLANCO, "center", font=game_over_font_input)
         pygame.display.flip()
 
     return player['puntos'], nombre_ingresado # Devolver el puntaje y el nombre para guardar

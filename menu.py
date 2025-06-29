@@ -1,66 +1,69 @@
 import pygame
-from utils import dibujar_texto, get_font # Importar funciones auxiliares y get_font
-
-# --- Funciones para Botones (reemplazando la clase Boton) ---
-
-def crear_boton_data(x, y, ancho, alto, texto, accion):
-    """
-    Crea un diccionario que representa los datos de un botón.
-    """
-    return {
-        'rect': pygame.Rect(x, y, ancho, alto),
-        'texto': texto,
-        'accion': accion
-    }
-
-def dibujar_boton(pantalla, boton_data, mouse_pos, color_normal, color_hover, fuente_boton, color_texto):
-    """
-    Dibuja un botón en la pantalla, cambiando de color al pasar el mouse.
-    """
-    color_actual = color_hover if boton_data['rect'].collidepoint(mouse_pos) else color_normal
-    pygame.draw.rect(pantalla, color_actual, boton_data['rect'], border_radius=10)
-    dibujar_texto(pantalla, boton_data['texto'], boton_data['rect'].centerx, boton_data['rect'].centery, fuente_boton.get_height(), color_texto, fuente=fuente_boton)
-
-def es_boton_clickeado(boton_data, mouse_pos):
-    """
-    Verifica si un botón ha sido clickeado.
-    """
-    return boton_data['rect'].collidepoint(mouse_pos)
+from utils.button import create_button, draw_button, is_button_clicked
 
 # --- Menú Principal ---
-def main_menu(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_titulo, fuente_boton, color_fondo, color_texto, color_boton_normal, color_boton_hover, color_borde):
+def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pygame.font.Font, text_color: tuple, button_color: tuple, button_hover: tuple) -> str:
     """
     Muestra el menú principal y maneja la interacción con los botones.
     Retorna la acción seleccionada ('jugar', 'ranking', 'creditos', 'salir').
     """
+    title_img = pygame.image.load("assets\\image\\title.png").convert_alpha()
+    title_img = pygame.transform.scale(title_img, (400, 100))
+
+    background_img = pygame.image.load("assets\\image\\background.jpg").convert()
+    background_img = pygame.transform.scale(background_img, (width, height))
+
+    icon_img = pygame.image.load("assets\\image\\weapon.png").convert_alpha()
+    icon_img = pygame.transform.scale(icon_img, (30, 30))
+
+    sound_click = pygame.mixer.Sound("assets\\sounds\\shoot.mp3")
+    sound_hover = pygame.mixer.Sound("assets\\sounds\\selection.mp3")
+    sound_click.set_volume(0.1)   # 50% del volumen
+    sound_hover.set_volume(0.1)   # 50% del volumen
+    buttons_hover_prev = set()
+
     # Lista de diccionarios de botones
-    botones = [
-        crear_boton_data(ANCHO_PANTALLA // 2 - 100, ALTO_PANTALLA // 2 - 80, 200, 60, "Jugar", "jugar"),
-        crear_boton_data(ANCHO_PANTALLA // 2 - 100, ALTO_PANTALLA // 2, 200, 60, "Ranking", "ranking"),
-        crear_boton_data(ANCHO_PANTALLA // 2 - 100, ALTO_PANTALLA // 2 + 80, 200, 60, "Créditos", "creditos"),
-        crear_boton_data(ANCHO_PANTALLA // 2 - 100, ALTO_PANTALLA // 2 + 160, 200, 60, "Salir", "salir")
+    buttons = [
+        create_button(width // 2 - 100, height // 2 - 80, 200, 60, "Jugar", "jugar"),
+        create_button(width // 2 - 100, height // 2, 200, 60, "Ranking", "ranking"),
+        create_button(width // 2 - 100, height // 2 + 80, 200, 60, "Créditos", "creditos"),
+        create_button(width // 2 - 100, height // 2 + 160, 200, 60, "Salir", "salir")
     ]
 
     running = True
     while running:
         mouse_pos = pygame.mouse.get_pos() # Obtener la posición actual del mouse
 
+        for button in buttons:
+            if button['rect'].collidepoint(mouse_pos):
+                if button['texto'] not in buttons_hover_prev:
+                    if sound_hover:
+                        sound_hover.play()
+                    buttons_hover_prev.add(button['texto'])
+            else:
+                buttons_hover_prev.discard(button['texto'])
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return "salir" # Si el usuario cierra la ventana, salir del juego
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # Click izquierdo del mouse
-                    for boton in botones:
-                        if es_boton_clickeado(boton, mouse_pos):
-                            return boton['accion'] # Retornar la acción del botón clickeado
+                    for button in buttons:
+                        if is_button_clicked(button, mouse_pos):
+                            if sound_click:
+                                sound_click.play()
+                            pygame.time.delay(1000)  # Espera breve para oír el sound
+                            return button['action'] # Retornar la acción del botón seleccionado
 
-        pantalla.fill(color_fondo) # Rellenar el fondo de la pantalla
+        screen.blit(background_img, (0, 0))
 
-        # Dibujar el título del juego
-        dibujar_texto(pantalla, "Cielo Letal", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 4, fuente_titulo.get_height(), color_texto, fuente=fuente_titulo)
+        title_rect = title_img.get_rect(center=(width // 2, int(height * 0.20)))
+        screen.blit(title_img, title_rect)
 
         # Dibujar todos los botones
-        for boton in botones:
-            dibujar_boton(pantalla, boton, mouse_pos, color_boton_normal, color_boton_hover, fuente_boton, color_texto)
+        for button in buttons:
+            draw_button(screen, button, mouse_pos, button_color, button_hover, button_font, text_color, icon_img)
 
         pygame.display.flip() # Actualizar la pantalla
+    
+    return "salir"
