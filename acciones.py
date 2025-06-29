@@ -1,63 +1,95 @@
 import pygame
 import sys
-from acciones import (
-    iniciar_juego,
-    mostrar_ranking,
-    mostrar_como_jugar,
-    mostrar_creditos,
-)
-from utils import cargar_fondo, render_texto
+from utils import render_texto, guardar_puntaje_txt, leer_ranking_txt
 
-# Cargar y reproducir música de fondo
-pygame.mixer.music.load("recursos/musica_menu.mp3")
-pygame.mixer.music.set_volume(0.5)  # Volumen de 0.0 a 1.0
-pygame.mixer.music.play(-1)  
+def esperar_escape():
+    while True:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
+                return
 
-def ejecutar_menu(pantalla):
-    opciones = ["Jugar", "Ver Ranking", "Cómo Jugar", "Créditos", "Salir"]
-    seleccion = 0
+def iniciar_juego(pantalla):
+    from juego import jugar
+    pygame.mixer.music.stop()  # Detener música del menú
+    jugar(pantalla)
+
+def pedir_nombre(pantalla):
+    fuente = pygame.font.SysFont("arial", 32)
+    nombre = ""
     reloj = pygame.time.Clock()
-    fuente = pygame.font.SysFont("serif", 40)
-    fondo = cargar_fondo("recursos/fondo_menu.png", pantalla)
 
-    ejecutando = True
-    while ejecutando:
-        pantalla.blit(fondo, (0, 0)) if fondo else pantalla.fill((255, 255, 255))
-
-        # Título
-        titulo = fuente.render("Mata o muere", True, (0, 0, 0))
-        titulo_rect = titulo.get_rect(center=(pantalla.get_width() // 2, 80))
-        pantalla.blit(titulo, titulo_rect)
-
-        # Opciones del menú
-        for i, texto in enumerate(opciones):
-            color = (255, 0, 0) if i == seleccion else (0, 0, 0)  # Rojo si seleccionado, negro si no
-            opcion_render = fuente.render(texto, True, color)
-            opcion_rect = opcion_render.get_rect(center=(pantalla.get_width() // 2, 200 + i * 60))
-            pantalla.blit(opcion_render, opcion_rect)
-
+    while True:
+        pantalla.fill((0, 0, 0))
+        render_texto(pantalla, "¡Fin del juego!", 280, 100)
+        render_texto(pantalla, "Tu puntaje será guardado", 220, 150)
+        render_texto(pantalla, "Ingresá tu nombre:", 260, 250)
+        render_texto(pantalla, nombre, 260, 300)
         pygame.display.flip()
 
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
-                ejecutando = False
+                pygame.quit()
+                sys.exit()
             elif evento.type == pygame.KEYDOWN:
-                if evento.key == pygame.K_UP:
-                    seleccion = (seleccion - 1) % len(opciones)
-                elif evento.key == pygame.K_DOWN:
-                    seleccion = (seleccion + 1) % len(opciones)
-                elif evento.key == pygame.K_RETURN:
-                    opcion = opciones[seleccion]
-                    if opcion == "Jugar":
-                        iniciar_juego(pantalla)
-                    elif opcion == "Ver Ranking":
-                        mostrar_ranking(pantalla)
-                    elif opcion == "Cómo Jugar":
-                        mostrar_como_jugar(pantalla)
-                    elif opcion == "Créditos":
-                        mostrar_creditos(pantalla)
-                    elif opcion == "Salir":
-                        pygame.mixer.music.stop()
-                        ejecutando = False
+                if evento.key == pygame.K_RETURN and nombre.strip():
+                    return nombre.strip()
+                elif evento.key == pygame.K_BACKSPACE:
+                    nombre = nombre[:-1]
+                elif len(nombre) < 15:
+                    nombre += evento.unicode
 
         reloj.tick(60)
+
+def mostrar_ranking(pantalla):
+    pantalla.fill((0, 0, 0))
+    ranking = leer_ranking_txt()
+
+    render_texto(pantalla, "Ranking de Jugadores", 220, 30)
+    y = 100
+    for i, (nombre, puntaje) in enumerate(ranking[:5], start=1):
+        render_texto(pantalla, f"{i}. {nombre} - {puntaje} pts", 200, y)
+        y += 40
+
+    render_texto(pantalla, "Presiona ESC para volver", 220, 520)
+    pygame.display.flip()
+    esperar_escape()
+
+def mostrar_como_jugar(pantalla):
+    fuente = pygame.font.SysFont("arial", 28)
+    teclas_img = pygame.image.load("recursos/teclas.png")
+    espacio_img = pygame.image.load("recursos/barra espaciadora.png")
+    teclas_img = pygame.transform.scale(teclas_img, (200, 100))
+    espacio_img = pygame.transform.scale(espacio_img, (200, 60))
+    reloj = pygame.time.Clock()
+
+    while True:
+        pantalla.fill((0, 0, 0))
+        render_texto(pantalla, "CÓMO JUGAR", 270, 50, fuente)
+        render_texto(pantalla, "Mueve con flechas o WASD:", 200, 150, fuente)
+        pantalla.blit(teclas_img, teclas_img.get_rect(center=(400, 240)))
+        render_texto(pantalla, "Dispara con la barra espaciadora", 160, 340, fuente)
+        pantalla.blit(espacio_img, espacio_img.get_rect(center=(400, 410)))
+        render_texto(pantalla, "Presiona ESC para volver", 220, 530, fuente)
+        pygame.display.flip()
+
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
+                return
+
+        reloj.tick(60)
+
+def mostrar_creditos(pantalla):
+    pantalla.fill((0, 0, 0))
+    render_texto(pantalla, "Créditos", 320, 50)
+    render_texto(pantalla, "Hecho por Miqueas", 200, 200)
+    render_texto(pantalla, "Materia: Programación 1", 180, 250)
+    render_texto(pantalla, "UTN - Facultad Regional Avellaneda", 100, 300)
+    render_texto(pantalla, "Presiona ESC para volver", 220, 500)
+    pygame.display.flip()
+    esperar_escape()
