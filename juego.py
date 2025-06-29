@@ -212,6 +212,7 @@ def dibujar_disparos(pantalla, disparos_list):
     """
     Dibuja todos los disparos en la pantalla.
     """
+
     for disparo in disparos_list:
         pygame.draw.rect(pantalla, disparo['color'], disparo['rect'])
 
@@ -325,6 +326,9 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
     player_image = pygame.transform.scale(player_image, (50, 50))  # Tamaño del jugador
     enemy_image = pygame.transform.scale(enemy_image, (40, 40))
 
+    shoot_sound = pygame.mixer.Sound("assets\\sounds\\player_shoot.mp3")
+    shoot_sound.set_volume(0.1)
+
     # Variable local para la superficie del corazón
     heart_surface_local = None 
 
@@ -383,6 +387,7 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
                     # Intentar disparar y añadir el nuevo disparo a la lista
                     nuevo_disparo = disparar_jugador(player, current_frames)
                     if nuevo_disparo:
+                        shoot_sound.play()
                         player_bullets.append(nuevo_disparo)
                 if event.key == pygame.K_z: # Tecla para el dash
                     usar_dash_jugador(player)
