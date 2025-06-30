@@ -12,12 +12,13 @@ DASH_VELOCIDAD_MULTIPLIER = 2.5 # Multiplicador de velocidad durante el dash
 
 def init_player(ANCHO_PANTALLA, ALTO_PANTALLA):
     """
-    Inicializa los datos del jugador como un diccionario.
+    Inicializa los datos del jugador como un diccionario para un juego horizontal.
+    El jugador se posiciona en el lado izquierdo, centrado verticalmente.
     """
     player_ancho = 50
     player_alto = 50
     return {
-        'rect': pygame.Rect(ANCHO_PANTALLA // 2 - player_ancho // 2, ALTO_PANTALLA - 70 - player_alto // 2, player_ancho, player_alto),
+        'rect': pygame.Rect(50, ALTO_PANTALLA // 2 - player_alto // 2, player_ancho, player_alto), # Posición inicial en la izquierda
         'velocidad': VELOCIDAD_JUGADOR_BASE,
         'vidas': VIDAS_INICIALES,
         'puntos': 0,
@@ -28,57 +29,61 @@ def init_player(ANCHO_PANTALLA, ALTO_PANTALLA):
         'dash_cooldown_timer': 0
     }
 
-def mover_jugador(player_data, keys, ANCHO_PANTALLA):
+def mover_jugador(player_data: dict, keys: pygame.key.ScancodeWrapper, ALTO_PANTALLA: int) -> None:
     """
-    Actualiza la posición del jugador según las teclas presionadas.
+    Mueve el jugador verticalmente en la pantalla, restringido a los límites verticales.
     """
-    current_speed = player_data['velocidad']
+    velocidad_actual = player_data['velocidad']
     if player_data['en_dash']:
-        current_speed *= DASH_VELOCIDAD_MULTIPLIER
+        velocidad_actual *= DASH_VELOCIDAD_MULTIPLIER
 
-    if keys[pygame.K_LEFT]:
-        player_data['rect'].x -= current_speed
-    if keys[pygame.K_RIGHT]:
-        player_data['rect'].x += current_speed
+    # Movimiento vertical
+    if keys[pygame.K_UP]:
+        player_data['rect'].y -= velocidad_actual
+    if keys[pygame.K_DOWN]:
+        player_data['rect'].y += velocidad_actual
 
-    # Limitar el movimiento dentro de la pantalla
-    if player_data['rect'].left < 0:
-        player_data['rect'].left = 0
-    if player_data['rect'].right > ANCHO_PANTALLA:
-        player_data['rect'].right = ANCHO_PANTALLA
+    # Restringir al jugador a los límites de la pantalla verticalmente
+    if player_data['rect'].top < 0:
+        player_data['rect'].top = 0
+    if player_data['rect'].bottom > ALTO_PANTALLA:
+        player_data['rect'].bottom = ALTO_PANTALLA
 
-def disparar_jugador(player_data, current_frames):
+def disparar_jugador(player_data: dict, current_time: int) -> dict | None:
     """
-    Crea un nuevo diccionario de disparo si el cooldown lo permite.
+    Crea un nuevo disparo si el cooldown lo permite.
+    Los disparos salen del centro derecho del jugador y se mueven horizontalmente.
     """
-    bullet_image = pygame.image.load("assets/image/bullet.png").convert_alpha()
-    if current_frames - player_data['ultima_vez_disparo'] > player_data['cooldown_disparo']:
-        player_data['ultima_vez_disparo'] = current_frames
-        bullet_ancho = 5
-        bullet_alto = 15
-        bullet_rect = bullet_image.get_rect(midbottom=(player_data['rect'].centerx, player_data['rect'].top))
+    if current_time - player_data['ultima_vez_disparo'] > player_data['cooldown_disparo']:
+        player_data['ultima_vez_disparo'] = current_time
+        bullet_ancho = 10
+        bullet_alto = 5
+        # El disparo sale del lado derecho del jugador
         return {
-            'rect': bullet_rect,
-            'velocidad': VELOCIDAD_DISPARO_JUGADOR,
-            'imagen': bullet_image,
-            'origen': 'jugador'
+            'rect': pygame.Rect(player_data['rect'].right, player_data['rect'].centery - bullet_alto // 2, bullet_ancho, bullet_alto),
+            'velocidad': VELOCIDAD_DISPARO_JUGADOR
         }
     return None
 
-def usar_dash_jugador(player_data):
+def mover_disparos(disparos_list: list) -> None:
     """
-    Activa el dash para el jugador si el cooldown lo permite.
+    Mueve todos los disparos del jugador horizontalmente hacia la derecha.
     """
-    if player_data['dash_cooldown_timer'] <= 0:
+    for disparo in disparos_list:
+        disparo['rect'].x += disparo['velocidad'] # Mover horizontalmente
+
+def usar_dash_jugador(player_data: dict) -> None:
+    """
+    Activa el dash del jugador si no está en cooldown.
+    """
+    if not player_data['en_dash'] and player_data['dash_cooldown_timer'] <= 0:
         player_data['en_dash'] = True
         player_data['dash_timer'] = DASH_DURATION_FRAMES
         player_data['dash_cooldown_timer'] = DASH_COOLDOWN_FRAMES
-        return True # Dash activado
-    return False # Dash no activado (en cooldown)
 
-def actualizar_dash_jugador(player_data):
+def actualizar_dash_jugador(player_data: dict) -> None:
     """
-    Actualiza el estado del dash y su temporizador.
+    Actualiza el temporizador del dash y el cooldown.
     """
     if player_data['en_dash']:
         player_data['dash_timer'] -= 1
@@ -88,36 +93,18 @@ def actualizar_dash_jugador(player_data):
     if player_data['dash_cooldown_timer'] > 0:
         player_data['dash_cooldown_timer'] -= 1
 
-def dibujar_jugador(pantalla, player_data, player_image, AZUL, BLANCO):
+def dibujar_jugador(pantalla: pygame.Surface, player_data: dict, player_image: pygame.Surface, AZUL: tuple, BLANCO: tuple) -> None:
     """
     Dibuja el jugador en la pantalla.
     """
-
     pantalla.blit(player_image, player_data['rect'])
 
     if player_data['en_dash']:
         pygame.draw.rect(pantalla, BLANCO, player_data['rect'].inflate(10, 10), 2, border_radius=5)
 
-    #if player_data['en_dash']:
-    #   # Dibujar un color diferente o efecto para el dash
-    #    pygame.draw.rect(pantalla, AZUL, player_data['rect'], border_radius=5)
-    #    # Borde blanco para efecto de dash
-    #    pygame.draw.rect(pantalla, BLANCO, player_data['rect'].inflate(10, 10), 2, border_radius=5)
-    #else:
-    #    pygame.draw.rect(pantalla, COLOR_JUGADOR, player_data['rect'], border_radius=5)
-
-def mover_disparos(disparos_list):
+def dibujar_disparos(pantalla: pygame.Surface, disparos_list: list) -> None:
     """
-    Actualiza la posición de todos los disparos en la lista.
+    Dibuja todos los disparos del jugador en la pantalla.
     """
     for disparo in disparos_list:
-        # En este juego, los disparos del jugador van hacia arriba
-        disparo['rect'].y -= disparo['velocidad']
-
-def dibujar_disparos(pantalla, disparos_list):
-    """
-    Dibuja todos los disparos en la pantalla.
-    """
-
-    for disparo in disparos_list:
-        pantalla.blit(disparo['imagen'], disparo['rect'])
+        pygame.draw.rect(pantalla, GREEN, disparo['rect'], border_radius=2) # Disparos verdes

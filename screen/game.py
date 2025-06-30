@@ -4,7 +4,7 @@ import os # Importar os para manejar rutas de archivos
 
 from entities.enemy import dibujar_enemigos, generar_enemigo, mover_enemigos
 from entities.player import actualizar_dash_jugador, dibujar_disparos, dibujar_jugador, disparar_jugador, init_player, mover_disparos, mover_jugador, usar_dash_jugador
-from utils.score import detectar_colision_rect # Importar funciones auxiliares
+from utils.collision import detectar_colision_rect # Importar funciones auxiliares desde el módulo correcto
 from utils.text import draw_text, get_font
 
 # --- Constantes del Juego ---
@@ -20,38 +20,40 @@ COOLDOWN_GENERACION_ENEMIGO_FRAMES = 60 # Aproximadamente 1 enemigo por segundo 
 # Obtener el directorio base del script actual
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Cargamos la spritesheet completa 'icons.png'
-SPRITESHEET_ICONS_PATH = os.path.join(BASE_DIR, 'assets\\image', 'icons.png') 
+SPRITESHEET_ICONS_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'icons.png') 
 
 # --- Funciones de Manejo de Entidades ---
-def limpiar_entidades_fuera_pantalla(enemigos_list, disparos_list, ALTO_PANTALLA):
+def limpiar_entidades_fuera_pantalla(enemigos_list: list, disparos_list: list, ANCHO_PANTALLA: int) -> None:
     """
-    Elimina enemigos y disparos que han salido de la pantalla.
+    Elimina enemigos y disparos que han salido de la pantalla en un juego horizontal.
     Iteramos hacia atrás para poder eliminar elementos de la lista sin problemas de índice.
     """
-    # Limpiar enemigos
+    # Limpiar enemigos (que se mueven de derecha a izquierda)
     i = len(enemigos_list) - 1
     while i >= 0:
-        if enemigos_list[i]['rect'].top > ALTO_PANTALLA:
+        # Si el enemigo ha salido completamente por la izquierda
+        if enemigos_list[i]['rect'].right < 0:
             del enemigos_list[i]
         i -= 1
     
-    # Limpiar disparos (del jugador, que van hacia arriba)
+    # Limpiar disparos (del jugador, que van hacia la derecha)
     i = len(disparos_list) - 1
     while i >= 0:
-        if disparos_list[i]['rect'].bottom < 0:
+        # Si el disparo ha salido completamente por la derecha
+        if disparos_list[i]['rect'].left > ANCHO_PANTALLA:
             del disparos_list[i]
         i -= 1
 
-def manejar_colisiones(player_data, enemigos_list, player_bullets_list):
+def manejar_colisiones(player_data: dict, enemigos_list: list, player_bullets_list: list) -> bool:
     """
     Maneja todas las colisiones entre entidades y actualiza vidas/puntos.
     Retorna True si el juego termina (vidas del jugador <= 0), False en caso contrario.
     """
     game_over = False
 
-    player_impact_sound = pygame.mixer.Sound("assets\\sounds\\impact.mp3")
+    player_impact_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "impact.mp3"))
     player_impact_sound.set_volume(0.3)
-    enemy_impact_sound = pygame.mixer.Sound("assets\\sounds\\enemy_impact.mp3")
+    enemy_impact_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "enemy_impact.mp3"))
     enemy_impact_sound.set_volume(0.1) 
 
     # Colisión disparos del jugador con enemigos
@@ -91,11 +93,12 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list):
     
     return game_over
 
-def dibujar_vidas_corazones(pantalla, vidas_actuales, vidas_maximas, heart_image_surface, lost_heart_color):
+def dibujar_vidas_corazones(pantalla: pygame.Surface, vidas_actuales: int, vidas_maximas: int, heart_image_surface: pygame.Surface, lost_heart_color: tuple) -> None:
     """
     Dibuja los corazones de vida al estilo Minecraft.
+    Posicionados para un layout horizontal.
     """
-    x_offset = 10 # Posición inicial X para el primer corazón
+    x_offset = 10 # Posición inicial X para los corazones
     y_offset = 40 # Posición Y para los corazones
     spacing = heart_image_surface.get_width() + 5 # Espacio entre corazones
 
@@ -106,15 +109,15 @@ def dibujar_vidas_corazones(pantalla, vidas_actuales, vidas_maximas, heart_image
         else:
             # Dibujar un rectángulo gris oscuro semi-transparente para la vida perdida
             lost_heart_rect = pygame.Rect(x_offset + i * spacing, y_offset, 
-                                          heart_image_surface.get_width(), 
-                                          heart_image_surface.get_height()) 
+                                        heart_image_surface.get_width(), 
+                                        heart_image_surface.get_height()) 
             s = pygame.Surface(lost_heart_rect.size, pygame.SRCALPHA) # Superficie con canal alfa
             s.fill(lost_heart_color) # Rellenar con el color gris oscuro semi-transparente
             pantalla.blit(s, lost_heart_rect)
 
 
 # --- Bucle Principal del Juego (main_game_loop) ---
-def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGRO, BLANCO, ROJO, VERDE, AZUL):
+def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA: int, fuente_pequena: pygame.font.Font, NEGRO: tuple, BLANCO: tuple, ROJO: tuple, VERDE: tuple, AZUL: tuple) -> tuple | None:
     """
     Gestiona la lógica principal de la partida.
     Retorna el puntaje final y el nombre del jugador si el juego termina.
@@ -129,32 +132,30 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
     player_image = pygame.image.load(PLAYER_IMAGE_PATH).convert_alpha()
     enemy_image = pygame.image.load(ENEMY_IMAGE_PATH).convert_alpha()
 
-# Escalar imágenes al tamaño del rectángulo
-    player_image = pygame.transform.scale(player_image, (50, 50))  # Tamaño del jugador
+    # Escalar imágenes al tamaño del rectángulo
+    player_image = pygame.transform.scale(player_image, (50, 50))   # Tamaño del jugador
     enemy_image = pygame.transform.scale(enemy_image, (40, 40))
 
-    shoot_sound = pygame.mixer.Sound("assets\\sounds\\player_shoot.mp3")
+    shoot_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "player_shoot.mp3"))
     shoot_sound.set_volume(0.1)
 
-    # Variable local para la superficie del corazón
-    heart_surface_local = None 
+    # Cargar y procesar la imagen del corazón una vez (SIN TRY-EXCEPT)
+    # Si hay un error de carga, el programa se detendrá aquí, como espera el profesor.
+    spritesheet = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha()
 
-    # Cargar y procesar la imagen del corazón una vez
-    # Esta variable local se inicializará la primera vez que se llama a main_game_loop
-    # y mantendrá su valor en llamadas subsecuentes dentro de la misma ejecución del juego.
-    if heart_surface_local is None:
-        # Cargar la spritesheet completa
-        spritesheet = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha()
-        # Definir el rectángulo del corazón lleno en la spritesheet (x, y, ancho, alto)
-        HEART_SPRITE_RECT_SOURCE = pygame.Rect(52, 0, 9, 9)
-        # Extraer el corazón lleno
-        heart_surface_local = spritesheet.subsurface(HEART_SPRITE_RECT_SOURCE)     
-        # Escalar el corazón para que sea más visible
-        SCALE_SIZE = (30, 30) # Tamaño deseado para los corazones en pantalla
-        heart_surface_local = pygame.transform.scale(heart_surface_local, SCALE_SIZE)
+    # Definir el rectángulo del corazón lleno en la spritesheet (x, y, ancho, alto)
+    HEART_SPRITE_RECT_SOURCE = pygame.Rect(52, 0, 9, 9) 
+
+    # Extraer el corazón lleno
+    heart_surface_local = spritesheet.subsurface(HEART_SPRITE_RECT_SOURCE)
+    
+    # Escalar el corazón para que sea más visible
+    SCALE_SIZE = (30, 30) # Tamaño deseado para los corazones en pantalla
+    heart_surface_local = pygame.transform.scale(heart_surface_local, SCALE_SIZE)
+
 
     reloj = pygame.time.Clock()
-    fps = 60
+    fps = 60 # Definir FPS aquí o cargar desde config.json
 
     # Inicializar datos del jugador
     player = init_player(ANCHO_PANTALLA, ALTO_PANTALLA)
@@ -186,17 +187,20 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
 
         # --- Movimiento del Jugador ---
         keys = pygame.key.get_pressed() # Obtener todas las teclas presionadas
-        mover_jugador(player, keys, ANCHO_PANTALLA)
+        # Las teclas de movimiento ahora son ARRIBA y ABAJO para el movimiento vertical
+        mover_jugador(player, keys, ALTO_PANTALLA) 
         actualizar_dash_jugador(player) # Actualizar el temporizador del dash
 
         # --- Generación de Enemigos ---
         frames_desde_ultima_generacion_enemigo += 1
         if frames_desde_ultima_generacion_enemigo >= COOLDOWN_GENERACION_ENEMIGO_FRAMES:
-            enemigos.append(generar_enemigo(ANCHO_PANTALLA))
+            # Ahora pasamos ANCHO_PANTALLA y ALTO_PANTALLA a generar_enemigo
+            enemigos.append(generar_enemigo(ANCHO_PANTALLA, ALTO_PANTALLA))
             frames_desde_ultima_generacion_enemigo = 0 # Reiniciar el contador
 
         # --- Movimiento de Enemigos y Disparos ---
-        mover_enemigos(enemigos)
+        # Ahora pasamos player_data a mover_enemigos para la lógica kamikaze
+        mover_enemigos(enemigos, player) 
         mover_disparos(player_bullets)
 
         # --- Colisiones ---
@@ -206,7 +210,8 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
             running = False # Si el jugador pierde todas las vidas, terminar el juego
 
         # --- Eliminar elementos fuera de pantalla ---
-        limpiar_entidades_fuera_pantalla(enemigos, player_bullets, ALTO_PANTALLA)
+        # Ahora pasamos ANCHO_PANTALLA para la limpieza horizontal
+        limpiar_entidades_fuera_pantalla(enemigos, player_bullets, ANCHO_PANTALLA)
 
         # --- Dibujar ---
         pantalla.blit(fondo_surface, (0, 0))
@@ -216,12 +221,12 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         dibujar_disparos(pantalla, player_bullets) # Dibujar todos los disparos del jugador
 
         # Dibujar UI (vidas y puntaje)
+        # Ajustar posición del puntaje para el layout horizontal
         draw_text(pantalla, f"Puntaje: {player['puntos']}", 15, 20, 24, BLANCO, "left")
-        # Reemplazar el texto de vidas con los corazones
-        # Pasamos el corazón rojo y el color para los corazones perdidos
+        # Reemplazar el texto de vidas con los corazones (posición ajustada en dibujar_vidas_corazones)
         dibujar_vidas_corazones(pantalla, player['vidas'], VIDAS_INICIALES, heart_surface_local, COLOR_CORAZON_PERDIDO)
         
-        # Mostrar el estado del dash cooldown
+        # Mostrar el estado del dash cooldown (ajustar posición para el layout horizontal)
         if player['dash_cooldown_timer'] > 0:
             tiempo_restante_dash = math.ceil(player['dash_cooldown_timer'] / fps)
             draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 110, 20, 24, ROJO, "left")
