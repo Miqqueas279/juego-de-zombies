@@ -119,7 +119,7 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
     Gestiona la lógica principal de la partida.
     Retorna el puntaje final y el nombre del jugador si el juego termina.
     """
-    FONDO_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'floor_1.jpg')
+    FONDO_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'floor.jpg')
     fondo_surface = pygame.image.load(FONDO_PATH).convert()
     fondo_surface = pygame.transform.scale(fondo_surface, (ANCHO_PANTALLA, ALTO_PANTALLA))
 
