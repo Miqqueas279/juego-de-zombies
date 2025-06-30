@@ -2,7 +2,7 @@ import pygame
 from utils.button import create_button, draw_button, is_button_clicked
 
 # --- Menú Principal ---
-def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pygame.font.Font, text_color: tuple, button_color: tuple, button_hover: tuple) -> str:
+def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pygame.font.Font, button_color: tuple, button_hover: tuple) -> str:
     """
     Muestra el menú principal y maneja la interacción con los botones.
     Retorna la acción seleccionada ('jugar', 'ranking', 'creditos', 'salir').
@@ -62,7 +62,7 @@ def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pyga
 
         # Dibujar todos los botones
         for button in buttons:
-            draw_button(screen, button, mouse_pos, button_color, button_hover, button_font, text_color, icon_img)
+            draw_button(screen, button, mouse_pos, button_color, button_hover, button_font, icon_img)
 
         pygame.display.flip() # Actualizar la pantalla
     

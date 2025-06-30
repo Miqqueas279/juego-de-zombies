@@ -13,7 +13,7 @@ def create_button(x: int, y: int, width: int, height: int, texto: str, action: s
         'action': action
     }
 
-def draw_button(screen: pygame.Surface, button: dict, mouse_pos: tuple, button_color: tuple, button_hover: tuple, button_font: pygame.font.Font, text_color: tuple, icon_img: pygame.Surface ) -> None:
+def draw_button(screen: pygame.Surface, button: dict, mouse_pos: tuple, button_color: tuple, button_hover: tuple, button_font: pygame.font.Font, icon_img: pygame.Surface ) -> None:
     """
     Dibuja un botón en la pantalla, cambiando de color al pasar el mouse.
     """
