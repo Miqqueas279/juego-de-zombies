@@ -2,8 +2,8 @@ import pygame
 import sys
 import json
 from screen.game import main_game_loop
-from menu import main_menu
-from ranking import show_ranking
+from screen.menu import main_menu
+from screen.ranking import show_ranking
 from utils.score import load_scores, save_scores
 
 # --- Configuración Inicial de Pygame ---
