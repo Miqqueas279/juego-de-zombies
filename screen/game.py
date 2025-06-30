@@ -119,7 +119,7 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
     Gestiona la lógica principal de la partida.
     Retorna el puntaje final y el nombre del jugador si el juego termina.
     """
-    FONDO_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'floor.jpg')
+    FONDO_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'floor_1.jpg')
     fondo_surface = pygame.image.load(FONDO_PATH).convert()
     fondo_surface = pygame.transform.scale(fondo_surface, (ANCHO_PANTALLA, ALTO_PANTALLA))
 
@@ -239,7 +239,7 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         # Mostrar el estado del dash cooldown
         if player['dash_cooldown_timer'] > 0:
             tiempo_restante_dash = math.ceil(player['dash_cooldown_timer'] / fps)
-            draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 150, 10, 24, ROJO, "left")
+            draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 110, 20, 24, ROJO, "left")
         elif not player['en_dash']:
             draw_text(pantalla, "Dash Listo", ANCHO_PANTALLA - 110, 20, 24, VERDE, "left")
 

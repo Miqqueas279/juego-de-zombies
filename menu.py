@@ -52,7 +52,7 @@ def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pyga
                         if is_button_clicked(button, mouse_pos):
                             if sound_click:
                                 sound_click.play()
-                            pygame.time.delay(1000)  # Espera breve para oír el sound
+                            pygame.time.delay(500)  # Espera breve para oír el sound
                             return button['action'] # Retornar la acción del botón seleccionado
 
         screen.blit(background_img, (0, 0))

@@ -51,14 +51,16 @@ def disparar_jugador(player_data, current_frames):
     """
     Crea un nuevo diccionario de disparo si el cooldown lo permite.
     """
+    bullet_image = pygame.image.load("assets/image/bullet.png").convert_alpha()
     if current_frames - player_data['ultima_vez_disparo'] > player_data['cooldown_disparo']:
         player_data['ultima_vez_disparo'] = current_frames
         bullet_ancho = 5
         bullet_alto = 15
+        bullet_rect = bullet_image.get_rect(midbottom=(player_data['rect'].centerx, player_data['rect'].top))
         return {
-            'rect': pygame.Rect(player_data['rect'].centerx - bullet_ancho // 2, player_data['rect'].top - bullet_alto, bullet_ancho, bullet_alto),
+            'rect': bullet_rect,
             'velocidad': VELOCIDAD_DISPARO_JUGADOR,
-            'color': GREEN,
+            'imagen': bullet_image,
             'origen': 'jugador'
         }
     return None
@@ -118,4 +120,4 @@ def dibujar_disparos(pantalla, disparos_list):
     """
 
     for disparo in disparos_list:
-        pygame.draw.rect(pantalla, disparo['color'], disparo['rect'])
+        pantalla.blit(disparo['imagen'], disparo['rect'])
