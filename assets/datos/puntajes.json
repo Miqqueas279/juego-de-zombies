@@ -8,15 +8,15 @@
         "puntaje": 30
     },
     {
+        "nombre": "",
+        "puntaje": 30
+    },
+    {
+        "nombre": "",
+        "puntaje": 25
+    },
+    {
         "nombre": "fede",
         "puntaje": 20
-    },
-    {
-        "nombre": "",
-        "puntaje": 10
-    },
-    {
-        "nombre": "",
-        "puntaje": 10
     }
 ]

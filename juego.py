@@ -8,8 +8,8 @@ from utils.score import detectar_colision_rect
 from utils.text import draw_text, get_font
 
 # --- Constantes del Juego ---
-COLOR_DISPARO_JUGADOR = (0, 255, 0) # Verde (los disparos aún se dibujan como rectángulos de color)
-COLOR_CORAZON_PERDIDO = (50, 50, 50, 150) # Gris oscuro semi-transparente (con transparencia)
+COLOR_DISPARO_JUGADOR = (0, 255, 0) # Green (shots are still drawn as colored rectangles)
+COLOR_CORAZON_PERDIDO = (50, 50, 50, 150) # Semi-transparent dark gray (with transparency)
 
 VELOCIDAD_JUGADOR_BASE = 5
 VELOCIDAD_DISPARO_JUGADOR = 10
@@ -17,62 +17,92 @@ VELOCIDAD_ENEMIGO_BASE = 2
 
 VIDAS_INICIALES = 3
 
-# Frecuencia de generación de enemigos
-COOLDOWN_GENERACION_ENEMIGO_FRAMES = 60 # Aproximadamente 1 enemigo por segundo a 60 FPS
-# Probabilidades de tipos de enemigos
-PROBABILIDAD_BOOSTED = 0.2 # 20% de probabilidad de enemigo con boost
-PROBABILIDAD_KAMIKAZE = 0.1 # 10% de probabilidad de kamikaze
-# Multiplicadores de velocidad para enemigos especiales
-FACTOR_VELOCIDAD_BOOSTED = 1.5 # Los enemigos con boost son 50% más rápidos
-FACTOR_VELOCIDAD_KAMIKAZE = 3.0 # Los kamikazes son 200% más rápidos
-VIDA_KAMIKAZE = 1 # Los kamikazes tienen poca vida
-# Puntos que otorgan los enemigos
+# Enemy generation frequency
+COOLDOWN_GENERACION_ENEMIGO_FRAMES = 60 # Approximately 1 enemy per second at 60 FPS
+# Probabilities of enemy types
+PROBABILIDAD_BOOSTED = 0.2 # 20% probability of boosted enemy
+PROBABILIDAD_KAMIKAZE = 0.1 # 10% probability of kamikaze
+# Speed multipliers for special enemies
+FACTOR_VELOCIDAD_BOOSTED = 1.5 # Boosted enemies are 50% faster
+FACTOR_VELOCIDAD_KAMIKAZE = 3.0 # Kamikazes are 200% faster
+VIDA_KAMIKAZE = 1 # Kamikazes have low health
+# Points awarded by enemies
 PUNTAJE_NORMAL = 10
 PUNTAJE_BOOSTED = 15
 PUNTAJE_KAMIKAZE = 25
 
-# Constantes del Dash del Jugador
-DASH_COOLDOWN_FRAMES = 180 # 3 segundos a 60 FPS
-DASH_DURATION_FRAMES = 15  # Duración del dash en frames
-DASH_VELOCIDAD_MULTIPLIER = 2.5 # Multiplicador de velocidad durante el dash
+# Player Dash Constants
+DASH_COOLDOWN_FRAMES = 180 # 3 seconds at 60 FPS
+DASH_DURATION_FRAMES = 15  # Dash duration in frames
+DASH_VELOCIDAD_MULTIPLIER = 2.5 # Speed multiplier during dash
 
-# Rutas de recursos
+# Resource paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 SPRITESHEET_ICONS_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'icons.png') 
 FONDO_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'floor.jpg')
 PLAYER_IMAGE_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'player.png')
-ENEMY_IMAGE_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zombie.png')
+ENEMY_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'ZombieSheet.png')
 
-# Rutas para los nuevos sonidos
+# Paths for new sounds
 SOUND_IMPACT_PATH = os.path.join(BASE_DIR, 'assets', 'sounds', 'impact.mp3')
 SOUND_ENEMY_IMPACT_PATH = os.path.join(BASE_DIR, 'assets', 'sounds', 'enemy_impact.mp3')
 
+# --- Zombie Animation Constants ---
+ZOMBIE_FRAME_WIDTH = 32  # Ancho de cada frame en la spritesheet original (confirmado a 32x32)
+ZOMBIE_FRAME_HEIGHT = 32 # Alto de cada frame en la spritesheet original (confirmado a 32x32)
 
-# --- Funciones de Manejo de Entidades ---
+ZOMBIE_ANIMATION_SPEED = 8 # Cuántos frames del juego pasan antes de cambiar el frame de animación (menor = más rápido)
+
+# **** CLAVE PARA SELECCIONAR LA ANIMACIÓN DEL ZOMBIE ****
+# Ajusta este valor para elegir qué fila de la spritesheet usar para la animación de caminar.
+# La primera fila es 0, la segunda es 1, etc.
+# Cada tipo de zombie en ZombieSheet.png ocupa 4 filas de sprites.
+# Si los zombies salen "cruzados", es probable que la fila seleccionada sea incorrecta
+# o que el ancho/alto del frame (32x32) no sea exacto para la spritesheet.
+#
+# Para la animación de "caminar hacia la izquierda" (que es la que los enemigos necesitan
+# al moverse de derecha a izquierda), generalmente es la segunda fila (índice 1)
+# dentro del bloque de 4 filas de cada tipo de zombie.
+#
+# Ejemplos de filas para la animación de caminar a la izquierda:
+# - Zombie 1 (Verde/Default):  1  (fila 0 del tipo de zombie + offset 1)
+# - Zombie 2 (Gris/Traje Azul): 5  (fila 4 del tipo de zombie + offset 1)
+# - Zombie 3 (Piel oscura/Pantalones azules): 9 (fila 8 del tipo de zombie + offset 1)
+# - Zombie 4 (Cabello rubio/Traje marrón): 13 (fila 12 del tipo de zombie + offset 1)
+# - Zombie 5 (Cabeza grande): 17 (fila 16 del tipo de zombie + offset 1)
+# - Zombie 6 (Piel gris/Camisa azul): 21 (fila 20 del tipo de zombie + offset 1)
+# - Zombie 7 (Traje rojo/Sombrero): 25 (fila 24 del tipo de zombie + offset 1)
+# - Zombie 8 (Piel marrón/Traje verde): 29 (fila 28 del tipo de zombie + offset 1)
+ZOMBIE_ANIMATION_ROW = 1# Fila de animación actual (para el primer zombie, caminar a la izquierda)
+
+NUM_ZOMBIE_WALK_FRAMES = 9 # Número de frames en la animación de caminar (9 frames por fila)
+
+
+# --- Entity Handling Functions ---
 
 def init_player(ANCHO_PANTALLA, ALTO_PANTALLA):
     """
-    Inicializa los datos del jugador como un diccionario para juego horizontal.
-    El jugador inicia a la izquierda, moviéndose verticalmente.
+    Initializes player data as a dictionary for horizontal gameplay.
+    Player starts on the left, moving vertically.
     """
     player_ancho = 50
     player_alto = 50
     return {
-        'rect': pygame.Rect(50, ALTO_PANTALLA // 2 - player_alto // 2, player_ancho, player_alto), # Inicia a la izquierda, centrado verticalmente
+        'rect': pygame.Rect(50, ALTO_PANTALLA // 2 - player_alto // 2, player_ancho, player_alto), # Starts on the left, vertically centered
         'velocidad': VELOCIDAD_JUGADOR_BASE,
         'vidas': VIDAS_INICIALES,
         'puntos': 0,
-        'ultima_vez_disparo': 0, # Tiempo en frames desde el último disparo
-        'cooldown_disparo': 20, # Frames a esperar entre disparos
+        'ultima_vez_disparo': 0, # Time in frames since last shot
+        'cooldown_disparo': 20, # Frames to wait between shots
         'en_dash': False,
         'dash_timer': 0,
         'dash_cooldown_timer': 0
     }
 
-def mover_jugador(player_data, keys, ALTO_PANTALLA): # Ahora depende de ALTO_PANTALLA
+def mover_jugador(player_data, keys, ALTO_PANTALLA): # Now depends on ALTO_PANTALLA
     """
-    Actualiza la posición del jugador según las teclas presionadas para movimiento vertical.
+    Updates player position based on pressed keys for vertical movement.
     """
     current_speed = player_data['velocidad']
     if player_data['en_dash']:
@@ -83,7 +113,7 @@ def mover_jugador(player_data, keys, ALTO_PANTALLA): # Ahora depende de ALTO_PAN
     if keys[pygame.K_DOWN]:
         player_data['rect'].y += current_speed
 
-    # Limitar el movimiento dentro de la pantalla (ahora verticalmente)
+    # Limit movement within the screen (now vertically)
     if player_data['rect'].top < 0:
         player_data['rect'].top = 0
     if player_data['rect'].bottom > ALTO_PANTALLA:
@@ -91,14 +121,14 @@ def mover_jugador(player_data, keys, ALTO_PANTALLA): # Ahora depende de ALTO_PAN
 
 def disparar_jugador(player_data, current_frames):
     """
-    Crea un nuevo diccionario de disparo si el cooldown lo permite (disparos hacia la derecha).
+    Creates a new shot dictionary if cooldown allows (shots to the right).
     """
     if current_frames - player_data['ultima_vez_disparo'] > player_data['cooldown_disparo']:
         player_data['ultima_vez_disparo'] = current_frames
-        bullet_ancho = 15 # Disparo horizontal, por lo tanto más ancho que alto
+        bullet_ancho = 15 # Horizontal shot, thus wider than tall
         bullet_alto = 5
         return {
-            'rect': pygame.Rect(player_data['rect'].right, player_data['rect'].centery - bullet_alto // 2, bullet_ancho, bullet_alto), # Sale de la derecha del jugador
+            'rect': pygame.Rect(player_data['rect'].right, player_data['rect'].centery - bullet_alto // 2, bullet_ancho, bullet_alto), # Exits from the right of the player
             'velocidad': VELOCIDAD_DISPARO_JUGADOR,
             'color': COLOR_DISPARO_JUGADOR,
             'origen': 'jugador'
@@ -107,7 +137,7 @@ def disparar_jugador(player_data, current_frames):
 
 def usar_dash_jugador(player_data):
     """
-    Activa el dash para el jugador si el cooldown lo permite.
+    Activates dash for the player if cooldown allows.
     """
     if player_data['dash_cooldown_timer'] <= 0:
         player_data['en_dash'] = True
@@ -118,7 +148,7 @@ def usar_dash_jugador(player_data):
 
 def actualizar_dash_jugador(player_data):
     """
-    Actualiza el estado del dash y su temporizador.
+    Updates dash status and its timer.
     """
     if player_data['en_dash']:
         player_data['dash_timer'] -= 1
@@ -130,33 +160,33 @@ def actualizar_dash_jugador(player_data):
 
 def dibujar_jugador(pantalla, player_data, player_image): 
     """
-    Dibuja el jugador en la pantalla.
+    Draws the player on the screen.
     """
     pantalla.blit(player_image, player_data['rect'])
 
-    # El borde blanco para el dash se mantiene
+    # White border for dash remains
     if player_data['en_dash']:
         pygame.draw.rect(pantalla, (255, 255, 255), player_data['rect'].inflate(10, 10), 2, border_radius=5)
 
 
-def generar_enemigo(ALTO_PANTALLA): # Ahora depende de ALTO_PANTALLA
+def generar_enemigo(ALTO_PANTALLA): # Now depends on ALTO_PANTALLA
     """
-    Crea un nuevo diccionario de enemigo con propiedades aleatorias para juego horizontal.
-    Los enemigos aparecen a la derecha, moviéndose horizontalmente.
+    Creates a new enemy dictionary with random properties for horizontal gameplay.
+    Enemies appear from the right, moving horizontally.
     """
     enemy_ancho = 40
     enemy_alto = 40
-    # Posición Y aleatoria en la parte derecha
+    # Random Y position on the right side
     y_pos = random.randint(enemy_alto // 2, ALTO_PANTALLA - enemy_alto // 2)
-    x_pos = 800 + enemy_ancho # Empieza justo fuera de la pantalla por la derecha (ANCHO_PANTALLA + enemy_ancho)
+    x_pos = 800 + enemy_ancho # Starts just off-screen to the right (ANCHO_PANTALLA + enemy_ancho)
 
-    # Propiedades base
+    # Base properties
     velocidad_enemigo = VELOCIDAD_ENEMIGO_BASE
     vida_enemigo = 1
     puntaje_enemigo = PUNTAJE_NORMAL
     tipo_enemigo = "normal"
 
-    # Determinar tipo de enemigo especial
+    # Determine special enemy type
     r = random.random()
     if r < PROBABILIDAD_KAMIKAZE:
         tipo_enemigo = "kamikaze"
@@ -173,105 +203,111 @@ def generar_enemigo(ALTO_PANTALLA): # Ahora depende de ALTO_PANTALLA
         'velocidad': velocidad_enemigo,
         'vida': vida_enemigo,
         'tipo': tipo_enemigo,
-        'puntos': puntaje_enemigo
+        'puntos': puntaje_enemigo,
+        'animation_frame': 0, # Index of the current animation frame
+        'frame_update_counter': 0 # Counter to control animation speed
     }
 
 def mover_enemigos(enemigos_list):
     """
-    Actualiza la posición de todos los enemigos en la lista (movimiento hacia la izquierda).
+    Updates the position of all enemies in the list (leftward movement).
     """
     for enemigo in enemigos_list:
-        enemigo['rect'].x -= enemigo['velocidad'] # Ahora mueven en X
+        enemigo['rect'].x -= enemigo['velocidad']
+        # Update animation frame
+        enemigo['frame_update_counter'] += 1
+        if enemigo['frame_update_counter'] >= ZOMBIE_ANIMATION_SPEED:
+            enemigo['animation_frame'] = (enemigo['animation_frame'] + 1) % NUM_ZOMBIE_WALK_FRAMES
+            enemigo['frame_update_counter'] = 0
 
-def dibujar_enemigos(pantalla, enemigos_list, enemy_image): 
+def dibujar_enemigos(pantalla, enemigos_list, enemy_spritesheet, zombie_walk_frames): # zombie_walk_frames is now passed
     """
-    Dibuja todos los enemigos en la pantalla usando su sprite.
+    Draws all enemies on the screen using the current frame of their animation.
     """
     for enemigo in enemigos_list:
-        pantalla.blit(enemy_image, enemigo['rect'])
+        current_frame_rect = zombie_walk_frames[enemigo['animation_frame']]
+        pantalla.blit(enemy_spritesheet, enemigo['rect'], current_frame_rect)
 
 def mover_disparos(disparos_list):
     """
-    Actualiza la posición de todos los disparos en la lista (movimiento hacia la derecha).
+    Updates the position of all shots in the list (rightward movement).
     """
     for disparo in disparos_list:
-        disparo['rect'].x += disparo['velocidad'] # Ahora mueven en X
+        disparo['rect'].x += disparo['velocidad']
 
 def dibujar_disparos(pantalla, disparos_list):
     """
-    Dibuja todos los disparos en la pantalla.
+    Draws all shots on the screen.
     """
     for disparo in disparos_list:
         pygame.draw.rect(pantalla, disparo['color'], disparo['rect'])
 
-def limpiar_entidades_fuera_pantalla(enemigos_list, disparos_list, ANCHO_PANTALLA): # Ahora depende de ANCHO_PANTALLA
+def limpiar_entidades_fuera_pantalla(enemigos_list, disparos_list, ANCHO_PANTALLA):
     """
-    Elimina enemigos y disparos que han salido de la pantalla (límites horizontales).
+    Removes enemies and shots that have left the screen (horizontal limits).
     """
-    # Limpiar enemigos (han salido por la izquierda)
+    # Clear enemies (have left on the left side)
     i = len(enemigos_list) - 1
     while i >= 0:
-        if enemigos_list[i]['rect'].right < 0: # Si el enemigo ha cruzado el borde izquierdo
+        if enemigos_list[i]['rect'].right < 0:
             del enemigos_list[i]
         i -= 1
     
-    # Limpiar disparos (han salido por la derecha)
+    # Clear shots (have left on the right side)
     i = len(disparos_list) - 1
     while i >= 0:
-        if disparos_list[i]['rect'].left > ANCHO_PANTALLA: # Si el disparo ha cruzado el borde derecho
+        if disparos_list[i]['rect'].left > ANCHO_PANTALLA:
             del disparos_list[i]
         i -= 1
 
-def manejar_colisiones(player_data, enemigos_list, player_bullets_list, player_impact_sound, enemy_impact_sound):
+def manejar_colisiones(player_data, enemigos_list, player_bullets_list, player_impact_sound, enemy_impact_sound): # Sound parameters added
     """
-    Maneja todas las colisiones entre entidades y actualiza vidas/puntos.
-    Retorna True si el juego termina (vidas del jugador <= 0), False en caso contrario.
+    Handles all collisions between entities and updates lives/points.
+    Returns True if the game ends (player's lives <= 0), False otherwise.
     """
     game_over = False
 
-    # Colisión disparos del jugador con enemigos
+    # Player shots collision with enemies
     i_bullet = len(player_bullets_list) - 1
     while i_bullet >= 0:
         bullet = player_bullets_list[i_bullet]
         j_enemy = len(enemigos_list) - 1
-        bullet_hit = False
+        bullet_hit = False # Flag to know if the bullet hit
         while j_enemy >= 0:
             enemy = enemigos_list[j_enemy]
             if detectar_colision_rect(bullet['rect'], enemy['rect']):
                 enemy['vida'] -= 1
-                enemy_impact_sound.play()
-                bullet_hit = True
+                enemy_impact_sound.play() # Play sound
+                bullet_hit = True # Bullet hit, must be removed
                 if enemy['vida'] <= 0:
-                    player_data['puntos'] += enemy['puntos']
-                    del enemigos_list[j_enemy]
-                break
+                    player_data['puntos'] += enemy['puntos'] # Add points for destroyed enemy
+                    del enemigos_list[j_enemy] # Remove enemy
+                break # Exit inner loop, shot already hit
             j_enemy -= 1
         
         if bullet_hit:
-            del player_bullets_list[i_bullet]
+            del player_bullets_list[i_bullet] # Remove the shot
         i_bullet -= 1
 
-    # Colisión enemigo con jugador
+    # Enemy collision with player
     i_enemy = len(enemigos_list) - 1
     while i_enemy >= 0:
         enemy = enemigos_list[i_enemy]
         if detectar_colision_rect(player_data['rect'], enemy['rect']):
             player_data['vidas'] -= 1
-            player_impact_sound.play()
-            del enemigos_list[i_enemy]
+            player_impact_sound.play() # Play sound
+            del enemigos_list[i_enemy] # Enemy is destroyed upon hitting the player
             if player_data['vidas'] <= 0:
-                game_over = True
-                break
+                game_over = True # Game over
+                break # No need to continue checking enemies
         i_enemy -= 1
     
     return game_over
 
 def dibujar_vidas_corazones(pantalla, vidas_actuales, vidas_maximas, heart_image_surface, lost_heart_color):
     """
-    Dibuja los corazones de vida al estilo Minecraft.
+    Draws life hearts in Minecraft style.
     """
-    # Cambiamos la posición de los corazones para que estén en la esquina superior derecha o inferior izquierda
-    # Los pondré en la esquina superior izquierda como antes, pero ajustando si es necesario.
     x_offset = 10 
     y_offset = 40
     spacing = heart_image_surface.get_width() + 5 
@@ -288,47 +324,76 @@ def dibujar_vidas_corazones(pantalla, vidas_actuales, vidas_maximas, heart_image
             pantalla.blit(s, lost_heart_rect)
 
 
-# --- Bucle Principal del Juego (main_game_loop) ---
+# --- Main Game Loop (main_game_loop) ---
 def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGRO, BLANCO, ROJO, VERDE, AZUL):
     """
-    Gestiona la lógica principal de la partida en modo horizontal.
-    Retorna el puntaje final y el nombre del jugador si el juego termina.
+    Manages the main game logic in horizontal mode with zombie animation.
+    Returns the final score and player name if the game ends.
     """
-    # Cargar los recursos una única vez al iniciar el bucle del juego
+    # Load resources once when the game loop starts
     if not hasattr(main_game_loop, 'resources_cached'):
         main_game_loop.resources_cached = {}
-        # Carga directa de todos los recursos (sin try-except)
-        # Cargar fondo
+        
+        # Load background
         main_game_loop.resources_cached['fondo_surface'] = pygame.image.load(FONDO_PATH).convert()
         main_game_loop.resources_cached['fondo_surface'] = pygame.transform.scale(
             main_game_loop.resources_cached['fondo_surface'], (ANCHO_PANTALLA, ALTO_PANTALLA)
         )
 
-        # Cargar imágenes de jugador y enemigo
-        # Podrías querer rotar los sprites si el jugador/enemigos miran hacia un lado.
-        # Por ahora, los dejamos en su orientación original.
+        # Load player image and enemy spritesheet
         main_game_loop.resources_cached['player_image'] = pygame.image.load(PLAYER_IMAGE_PATH).convert_alpha()
-        main_game_loop.resources_cached['enemy_image'] = pygame.image.load(ENEMY_IMAGE_PATH).convert_alpha()
+        main_game_loop.resources_cached['enemy_spritesheet'] = pygame.image.load(ENEMY_SPRITESHEET_PATH).convert_alpha()
 
-        # Escalar imágenes al tamaño del rectángulo
+        # Scale images (only player, enemy is scaled when drawing each frame)
         main_game_loop.resources_cached['player_image'] = pygame.transform.scale(
             main_game_loop.resources_cached['player_image'], (50, 50)
         )
-        main_game_loop.resources_cached['enemy_image'] = pygame.transform.scale(
-            main_game_loop.resources_cached['enemy_image'], (40, 40)
+        
+        # Calculate scale factor for zombie frames to be 40x40
+        # This is important if your collision rect size (40x40)
+        # does not match the original frame size in the spritesheet (32x32).
+        scale_factor_x = 40 / ZOMBIE_FRAME_WIDTH
+        scale_factor_y = 40 / ZOMBIE_FRAME_HEIGHT
+        
+        # Scale the entire zombie spritesheet once here
+        main_game_loop.resources_cached['enemy_spritesheet'] = pygame.transform.scale(
+            main_game_loop.resources_cached['enemy_spritesheet'], 
+            (int(main_game_loop.resources_cached['enemy_spritesheet'].get_width() * scale_factor_x), 
+             int(main_game_loop.resources_cached['enemy_spritesheet'].get_height() * scale_factor_y))
         )
+        
+        # Calculate and store the scaled animation frame rectangles
+        # Esto es la lista que 'draw_enemies' usará para saber qué parte de la spritesheet dibujar.
+        scaled_zombie_walk_frames = []
+        for i in range(NUM_ZOMBIE_WALK_FRAMES):
+            # Calculate the X and Y coordinates of the original frame in the spritesheet.
+            frame_x = i * ZOMBIE_FRAME_WIDTH
+            # AQUI SE USA ZOMBIE_ANIMATION_ROW PARA SELECCIONAR LA FILA COMPLETA
+            frame_y = ZOMBIE_ANIMATION_ROW * ZOMBIE_FRAME_HEIGHT 
+            original_rect = pygame.Rect(frame_x, frame_y, ZOMBIE_FRAME_WIDTH, ZOMBIE_FRAME_HEIGHT)
+            
+            # Scale each coordinate and dimension of the rectangle to match the spritesheet's scaling.
+            scaled_x = int(original_rect.x * scale_factor_x)
+            scaled_y = int(original_rect.y * scale_factor_y)
+            scaled_width = int(original_rect.width * scale_factor_x)
+            scaled_height = int(original_rect.height * scale_factor_y)
+            scaled_zombie_walk_frames.append(pygame.Rect(scaled_x, scaled_y, scaled_width, scaled_height))
+        
+        # Store the scaled frames list in the resource cache
+        main_game_loop.resources_cached['zombie_walk_frames'] = scaled_zombie_walk_frames
 
-        # Cargar la spritesheet de iconos y extraer el corazón
-        spritesheet = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha()
+
+        # Load icons spritesheet and extract heart
+        spritesheet_icons = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha()
         HEART_SPRITE_RECT_SOURCE = pygame.Rect(52, 0, 9, 9) 
-        main_game_loop.resources_cached['heart_surface_local'] = spritesheet.subsurface(HEART_SPRITE_RECT_SOURCE)
+        main_game_loop.resources_cached['heart_surface_local'] = spritesheet_icons.subsurface(HEART_SPRITE_RECT_SOURCE)
         
         SCALE_SIZE = (30, 30)
         main_game_loop.resources_cached['heart_surface_local'] = pygame.transform.scale(
             main_game_loop.resources_cached['heart_surface_local'], SCALE_SIZE
         )
 
-        # Cargar sonidos y almacenarlos en caché
+        # Load sounds and cache them
         player_impact_sound = pygame.mixer.Sound(SOUND_IMPACT_PATH)
         player_impact_sound.set_volume(0.3)
         main_game_loop.resources_cached['player_impact_sound'] = player_impact_sound
@@ -338,10 +403,11 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         main_game_loop.resources_cached['enemy_impact_sound'] = enemy_impact_sound
 
 
-    # Obtener las superficies e instancias de sonido desde el caché
+    # Get surfaces and sound instances from cache
     fondo_surface = main_game_loop.resources_cached['fondo_surface']
     player_image = main_game_loop.resources_cached['player_image']
-    enemy_image = main_game_loop.resources_cached['enemy_image']
+    enemy_spritesheet = main_game_loop.resources_cached['enemy_spritesheet'] 
+    zombie_walk_frames = main_game_loop.resources_cached['zombie_walk_frames'] # Get frames from cache
     heart_surface_to_use = main_game_loop.resources_cached['heart_surface_local']
     player_impact_sound = main_game_loop.resources_cached['player_impact_sound']
     enemy_impact_sound = main_game_loop.resources_cached['enemy_impact_sound']
@@ -349,14 +415,14 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
     reloj = pygame.time.Clock()
     fps = 60
 
-    # Inicializar datos del jugador
+    # Initialize player data
     player = init_player(ANCHO_PANTALLA, ALTO_PANTALLA)
     
-    # Listas para guardar enemigos y disparos
+    # Lists to store enemies and shots
     enemigos = []
     player_bullets = []
 
-    frames_desde_ultima_generacion_enemigo = 0 # Contador para la generación de enemigos
+    frames_desde_ultima_generacion_enemigo = 0 # Counter for enemy generation
 
     running = True
     while running:
@@ -366,51 +432,50 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
             if event.type == pygame.QUIT:
                 running = False
                 return None, None
-            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.KEYDOWN: # Check for KEYDOWN event
                 if event.key == pygame.K_SPACE:
                     nuevo_disparo = disparar_jugador(player, current_frames)
                     if nuevo_disparo:
                         player_bullets.append(nuevo_disparo)
-                if event.key == pygame.K_z: # Tecla para el dash
+                if event.key == pygame.K_z: # Key for dash
                     usar_dash_jugador(player)
 
-        # --- Movimiento del Jugador ---
+        # --- Player Movement ---
         keys = pygame.key.get_pressed()
-        mover_jugador(player, keys, ALTO_PANTALLA) # Ahora se pasa ALTO_PANTALLA
+        mover_jugador(player, keys, ALTO_PANTALLA)
         actualizar_dash_jugador(player)
 
-        # --- Generación de Enemigos ---
+        # --- Enemy Generation ---
         frames_desde_ultima_generacion_enemigo += 1
         if frames_desde_ultima_generacion_enemigo >= COOLDOWN_GENERACION_ENEMIGO_FRAMES:
-            enemigos.append(generar_enemigo(ALTO_PANTALLA)) # Ahora se pasa ALTO_PANTALLA
+            enemigos.append(generar_enemigo(ALTO_PANTALLA))
             frames_desde_ultima_generacion_enemigo = 0
 
-        # --- Movimiento de Enemigos y Disparos ---
-        mover_enemigos(enemigos)
+        # --- Enemy and Shot Movement ---
+        mover_enemigos(enemigos) # This function now also updates the zombie animation frame
         mover_disparos(player_bullets)
 
-        # --- Colisiones ---
+        # --- Collisions ---
         game_over = manejar_colisiones(player, enemigos, player_bullets, player_impact_sound, enemy_impact_sound)
         if game_over:
             running = False
 
-        # --- Eliminar elementos fuera de pantalla ---
-        limpiar_entidades_fuera_pantalla(enemigos, player_bullets, ANCHO_PANTALLA) # Ahora se pasa ANCHO_PANTALLA
+        # --- Clear off-screen entities ---
+        limpiar_entidades_fuera_pantalla(enemigos, player_bullets, ANCHO_PANTALLA)
 
-        # --- Dibujar ---
-        pantalla.blit(fondo_surface, (0, 0)) # Dibujar el fondo
+        # --- Draw ---
+        pantalla.blit(fondo_surface, (0, 0))
 
         dibujar_jugador(pantalla, player, player_image) 
-        dibujar_enemigos(pantalla, enemigos, enemy_image) 
+        # Here the full spritesheet AND the scaled frames list are passed.
+        dibujar_enemigos(pantalla, enemigos, enemy_spritesheet, zombie_walk_frames) 
         dibujar_disparos(pantalla, player_bullets) 
 
-        # Dibujar UI (vidas y puntaje)
+        # Draw UI (lives and score)
         draw_text(pantalla, f"Puntaje: {player['puntos']}", 15, 20, 24, BLANCO, "left", font=fuente_pequena)
         dibujar_vidas_corazones(pantalla, player['vidas'], VIDAS_INICIALES, heart_surface_to_use, COLOR_CORAZON_PERDIDO)
         
-        # Mostrar el estado del dash cooldown (ajustar posición para layout horizontal)
-        # Podríamos moverlo a la esquina inferior derecha o seguir en la superior derecha
-        # Lo mantendré en la superior derecha por ahora.
+        # Show dash cooldown status
         if player['dash_cooldown_timer'] > 0:
             tiempo_restante_dash = math.ceil(player['dash_cooldown_timer'] / fps)
             draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 10, 20, 24, ROJO, "right", font=fuente_pequena)
