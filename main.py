@@ -1,7 +1,7 @@
 import pygame
 import sys
 # Importamos las funciones principales de cada módulo
-from juego import main_game_loop
+from screen.game import main_game_loop
 from menu import main_menu
 from ranking import show_ranking
 from utils.score import load_scores, save_scores # Las funciones de ranking ahora están en utils para simplificar las dependencias
