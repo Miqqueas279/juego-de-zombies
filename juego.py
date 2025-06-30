@@ -23,7 +23,7 @@ COOLDOWN_GENERACION_ENEMIGO_FRAMES = 60 # Approximately 1 enemy per second at 60
 PROBABILIDAD_BOOSTED = 0.2 # 20% probability of boosted enemy
 PROBABILIDAD_KAMIKAZE = 0.1 # 10% probability of kamikaze
 # Speed multipliers for special enemies
-FACTOR_VELOCIDAD_BOOSTED = 1.5 # Boosted enemies are 50% faster
+FACTOR_VELOCIDAD_BOOSTED = -1.5 # Boosted enemies are 50% lower
 FACTOR_VELOCIDAD_KAMIKAZE = 3.0 # Kamikazes are 200% faster
 VIDA_KAMIKAZE = 1 # Kamikazes have low health
 # Points awarded by enemies
@@ -49,37 +49,16 @@ SOUND_IMPACT_PATH = os.path.join(BASE_DIR, 'assets', 'sounds', 'impact.mp3')
 SOUND_ENEMY_IMPACT_PATH = os.path.join(BASE_DIR, 'assets', 'sounds', 'enemy_impact.mp3')
 
 # --- Zombie Animation Constants ---
-ZOMBIE_FRAME_WIDTH = 32  # Ancho de cada frame en la spritesheet original (confirmado a 32x32)
-ZOMBIE_FRAME_HEIGHT = 32 # Alto de cada frame en la spritesheet original (confirmado a 32x32)
 
-ZOMBIE_ANIMATION_SPEED = 8 # Cuántos frames del juego pasan antes de cambiar el frame de animación (menor = más rápido)
+ZOMBIE_FRAME_ANCHO = 32  # Ancho de cada frame en la spritesheet original
+ZOMBIE_FRAME_ALTO = 32 # Alto de cada frame en la spritesheet original
+ZOMBIE_ANIMATION_SPEED = 8 
+# Número de frames en la animación de caminar (9 frames por fila en tu spritesheet).
+NUM_ZOMBIE_WALK_FRAMES = 9 
 
-# **** CLAVE PARA SELECCIONAR LA ANIMACIÓN DEL ZOMBIE ****
-# Ajusta este valor para elegir qué fila de la spritesheet usar para la animación de caminar.
-# La primera fila es 0, la segunda es 1, etc.
-# Cada tipo de zombie en ZombieSheet.png ocupa 4 filas de sprites.
-# Si los zombies salen "cruzados", es probable que la fila seleccionada sea incorrecta
-# o que el ancho/alto del frame (32x32) no sea exacto para la spritesheet.
-#
-# Para la animación de "caminar hacia la izquierda" (que es la que los enemigos necesitan
-# al moverse de derecha a izquierda), generalmente es la segunda fila (índice 1)
-# dentro del bloque de 4 filas de cada tipo de zombie.
-#
-# Ejemplos de filas para la animación de caminar a la izquierda:
-# - Zombie 1 (Verde/Default):  1  (fila 0 del tipo de zombie + offset 1)
-# - Zombie 2 (Gris/Traje Azul): 5  (fila 4 del tipo de zombie + offset 1)
-# - Zombie 3 (Piel oscura/Pantalones azules): 9 (fila 8 del tipo de zombie + offset 1)
-# - Zombie 4 (Cabello rubio/Traje marrón): 13 (fila 12 del tipo de zombie + offset 1)
-# - Zombie 5 (Cabeza grande): 17 (fila 16 del tipo de zombie + offset 1)
-# - Zombie 6 (Piel gris/Camisa azul): 21 (fila 20 del tipo de zombie + offset 1)
-# - Zombie 7 (Traje rojo/Sombrero): 25 (fila 24 del tipo de zombie + offset 1)
-# - Zombie 8 (Piel marrón/Traje verde): 29 (fila 28 del tipo de zombie + offset 1)
-ZOMBIE_ANIMATION_ROW = 1# Fila de animación actual (para el primer zombie, caminar a la izquierda)
+ZOMBIE_ANIMATION_ROW = 1 # Fila de animación actual (para el primer zombie, caminar a la izquierda)
 
-NUM_ZOMBIE_WALK_FRAMES = 9 # Número de frames en la animación de caminar (9 frames por fila)
-
-
-# --- Entity Handling Functions ---
+# --- Funciones de Manejo de Entidades ---
 
 def init_player(ANCHO_PANTALLA, ALTO_PANTALLA):
     """
@@ -317,8 +296,8 @@ def dibujar_vidas_corazones(pantalla, vidas_actuales, vidas_maximas, heart_image
             pantalla.blit(heart_image_surface, (x_offset + i * spacing, y_offset))
         else:
             lost_heart_rect = pygame.Rect(x_offset + i * spacing, y_offset, 
-                                          heart_image_surface.get_width(), 
-                                          heart_image_surface.get_height()) 
+                                        heart_image_surface.get_width(), 
+                                        heart_image_surface.get_height()) 
             s = pygame.Surface(lost_heart_rect.size, pygame.SRCALPHA)
             s.fill(lost_heart_color)
             pantalla.blit(s, lost_heart_rect)
@@ -342,7 +321,7 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
 
         # Load player image and enemy spritesheet
         main_game_loop.resources_cached['player_image'] = pygame.image.load(PLAYER_IMAGE_PATH).convert_alpha()
-        main_game_loop.resources_cached['enemy_spritesheet'] = pygame.image.load(ENEMY_SPRITESHEET_PATH).convert_alpha()
+        main_game_loop.resources_cached['enemy_spritesheet'] = pygame.image.load(ENEMY_SPRITESHEET_PATH).convert_alpha() # Carga la spritesheet completa
 
         # Scale images (only player, enemy is scaled when drawing each frame)
         main_game_loop.resources_cached['player_image'] = pygame.transform.scale(
@@ -352,8 +331,8 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         # Calculate scale factor for zombie frames to be 40x40
         # This is important if your collision rect size (40x40)
         # does not match the original frame size in the spritesheet (32x32).
-        scale_factor_x = 40 / ZOMBIE_FRAME_WIDTH
-        scale_factor_y = 40 / ZOMBIE_FRAME_HEIGHT
+        scale_factor_x = 40 / ZOMBIE_FRAME_ANCHO
+        scale_factor_y = 40 / ZOMBIE_FRAME_ALTO
         
         # Scale the entire zombie spritesheet once here
         main_game_loop.resources_cached['enemy_spritesheet'] = pygame.transform.scale(
@@ -363,14 +342,14 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         )
         
         # Calculate and store the scaled animation frame rectangles
-        # Esto es la lista que 'draw_enemies' usará para saber qué parte de la spritesheet dibujar.
+        # This is the list that 'draw_enemies' will use to know which part of the spritesheet to draw.
         scaled_zombie_walk_frames = []
         for i in range(NUM_ZOMBIE_WALK_FRAMES):
             # Calculate the X and Y coordinates of the original frame in the spritesheet.
-            frame_x = i * ZOMBIE_FRAME_WIDTH
+            frame_x = i * ZOMBIE_FRAME_ANCHO
             # AQUI SE USA ZOMBIE_ANIMATION_ROW PARA SELECCIONAR LA FILA COMPLETA
-            frame_y = ZOMBIE_ANIMATION_ROW * ZOMBIE_FRAME_HEIGHT 
-            original_rect = pygame.Rect(frame_x, frame_y, ZOMBIE_FRAME_WIDTH, ZOMBIE_FRAME_HEIGHT)
+            frame_y = ZOMBIE_ANIMATION_ROW * ZOMBIE_FRAME_ALTO 
+            original_rect = pygame.Rect(frame_x, frame_y, ZOMBIE_FRAME_ANCHO, ZOMBIE_FRAME_ALTO)
             
             # Scale each coordinate and dimension of the rectangle to match the spritesheet's scaling.
             scaled_x = int(original_rect.x * scale_factor_x)
