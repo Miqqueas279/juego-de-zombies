@@ -1,0 +1,25 @@
+{
+    "screen": {
+        "width": 800,
+        "height": 600
+    },
+    "colors": {
+        "green": [0, 255, 0],
+        "grey": [50, 50, 50, 150],
+        "orange": [228, 142, 0]
+    },
+    "player_health": 3,
+    "player_speed": 5,
+    "shoot_speed": 10,
+    "enemy_speed": 2,
+    "dash_cooldown_ms": 180,
+    "dash_duration_ms": 15,
+    "dash_velocity_multiplier": 2.5,
+    "enemy_generation_cooldown_ms": 60,
+    "prob_boosted": 0.2,
+    "prob_kamikaze": 0.1,
+    "boosted_speed": 1.5,
+    "kamikaze_speed": 3.0,
+    "enemy_health": 1,
+    "score": 10
+}
