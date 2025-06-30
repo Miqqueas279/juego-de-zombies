@@ -143,30 +143,15 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
     # Esta variable local se inicializará la primera vez que se llama a main_game_loop
     # y mantendrá su valor en llamadas subsecuentes dentro de la misma ejecución del juego.
     if heart_surface_local is None:
-        try:
-            # Cargar la spritesheet completa
-            spritesheet = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha()
-
-            # Definir el rectángulo del corazón lleno en la spritesheet (x, y, ancho, alto)
-            # El corazón rojo completo está en (16,0) y mide 9x9 píxeles en la spritesheet de Minecraft
-            HEART_SPRITE_RECT_SOURCE = pygame.Rect(52, 0, 9, 9) #(el 52 marca la posicion donde esta el corazon rojo 
-            #                                                    del spirtesheet de minecraft, si lo quieren cambiar a 
-            #                                                    alguno vayan probando numeros) 
-
-            # Extraer el corazón lleno
-            heart_surface_local = spritesheet.subsurface(HEART_SPRITE_RECT_SOURCE)
-            
-            # Escalar el corazón para que sea más visible
-            SCALE_SIZE = (30, 30) # Tamaño deseado para los corazones en pantalla
-            heart_surface_local = pygame.transform.scale(heart_surface_local, SCALE_SIZE)
-
-        except pygame.error as e:
-            print(f"Error cargando o procesando la spritesheet de iconos: {e}")
-            # Fallback si no se puede cargar o procesar la imagen: un círculo rojo
-            temp_surface_full = pygame.Surface((30, 30), pygame.SRCALPHA)
-            pygame.draw.circle(temp_surface_full, (255, 0, 0, 255), (15, 15), 15) # Círculo rojo opaco
-            heart_surface_local = temp_surface_full
-
+        # Cargar la spritesheet completa
+        spritesheet = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha()
+        # Definir el rectángulo del corazón lleno en la spritesheet (x, y, ancho, alto)
+        HEART_SPRITE_RECT_SOURCE = pygame.Rect(52, 0, 9, 9)
+        # Extraer el corazón lleno
+        heart_surface_local = spritesheet.subsurface(HEART_SPRITE_RECT_SOURCE)     
+        # Escalar el corazón para que sea más visible
+        SCALE_SIZE = (30, 30) # Tamaño deseado para los corazones en pantalla
+        heart_surface_local = pygame.transform.scale(heart_surface_local, SCALE_SIZE)
 
     reloj = pygame.time.Clock()
     fps = 60
