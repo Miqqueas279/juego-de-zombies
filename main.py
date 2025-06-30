@@ -1,20 +1,20 @@
 import pygame
 import sys
-# Importamos las funciones principales de cada módulo
-from juego import main_game_loop
+import json
+from screen.game import main_game_loop
 from menu import main_menu
 from ranking import show_ranking
-from utils.score import load_scores, save_scores # Las funciones de ranking ahora están en utils para simplificar las dependencias
+from utils.score import load_scores, save_scores
 
 # --- Configuración Inicial de Pygame ---
 pygame.init()
 pygame.mixer.init() # Inicializar el mezclador de sonido para música y efectos
 
 # --- Configuración de Pantalla ---
-ANCHO_PANTALLA = 800
-ALTO_PANTALLA = 600
-PANTALLA = pygame.display.set_mode((ANCHO_PANTALLA, ALTO_PANTALLA))
-pygame.display.set_caption("Cielo Letal") # Título de la ventana del juego
+#ANCHO_PANTALLA = 800
+#ALTO_PANTALLA = 600
+#PANTALLA = pygame.display.set_mode((ANCHO_PANTALLA, ALTO_PANTALLA))
+#pygame.display.set_caption("Cielo Letal") # Título de la ventana del juego
 
 # --- Colores ---
 BLANCO = (255, 255, 255)
@@ -37,15 +37,20 @@ def main():
     Función principal que controla el flujo del juego entre el menú,
     la partida y el ranking.
     """
+    with open("config.json", "r", encoding="utf-8") as file:
+        config = json.load(file)
+
+    PANTALLA = pygame.display.set_mode((config["screen"]["width"], config["screen"]["height"]))
+    pygame.display.set_caption("Cielo Letal") # Título de la ventana del juego
+
     while True:
         # Mostrar el menú principal y obtener la opción seleccionada
         # Pasamos todas las variables de configuración necesarias
-        opcion_menu = main_menu(PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, FUENTE_MEDIA, GRIS, NARANJA)
+        option = main_menu(PANTALLA, config["screen"]["width"], config["screen"]["height"], FUENTE_MEDIA, GRIS, NARANJA)
 
-        if opcion_menu == "jugar":
+        if option == "jugar":
             # Iniciar el bucle principal de la partida
-            # El juego devuelve el puntaje final y el nombre del jugador
-            puntaje_final, nombre_jugador = main_game_loop(PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, FUENTE_PEQUENA, NEGRO, BLANCO, ROJO, VERDE, AZUL)
+            puntaje_final, nombre_jugador = main_game_loop(PANTALLA, config["screen"]["width"], config["screen"]["height"], FUENTE_PEQUENA, NEGRO, BLANCO, ROJO, VERDE, AZUL)
             
             # Si el juego terminó (no fue cerrado por el usuario con la X)
             if puntaje_final is not None:
@@ -54,20 +59,17 @@ def main():
                 scores.append({"nombre": nombre_jugador, "puntaje": puntaje_final})
                 save_scores(scores)
                 # Mostrar la pantalla de ranking después de guardar el puntaje
-                show_ranking(PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, FUENTE_GRANDE, FUENTE_MEDIA, NEGRO, BLANCO, scores)
-        elif opcion_menu == "ranking":
+                show_ranking(PANTALLA, config["screen"]["width"], config["screen"]["height"], FUENTE_GRANDE, FUENTE_MEDIA, NEGRO, BLANCO, scores)
+        elif option == "ranking":
             # Cargar y mostrar el ranking
             scores = load_scores()
-            show_ranking(PANTALLA, ANCHO_PANTALLA, ALTO_PANTALLA, FUENTE_GRANDE, FUENTE_MEDIA, NEGRO, BLANCO, scores)
-        elif opcion_menu == "creditos":
-            # TODO: Implementar la pantalla de créditos.
+            show_ranking(PANTALLA, config["screen"]["width"], config["screen"]["height"], FUENTE_GRANDE, FUENTE_MEDIA, NEGRO, BLANCO, scores)
+        elif option == "creditos":
             # Por ahora, un simple mensaje y vuelve al menú.
             print("Mostrar créditos (aún no implementado)")
-        elif opcion_menu == "salir":
-            # Si se selecciona "Salir", terminar Pygame y cerrar la aplicación
+        elif option == "salir":
             pygame.quit()
             sys.exit()
 
 if __name__ == "__main__":
-    # Asegurarse de que la función main se ejecute al iniciar el script
     main()

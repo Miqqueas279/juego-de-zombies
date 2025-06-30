@@ -18,8 +18,8 @@ def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pyga
 
     sound_click = pygame.mixer.Sound("assets\\sounds\\shoot.mp3")
     sound_hover = pygame.mixer.Sound("assets\\sounds\\selection.mp3")
-    sound_click.set_volume(0.1)   # 50% del volumen
-    sound_hover.set_volume(0.1)   # 50% del volumen
+    sound_click.set_volume(0.1)   # 10% del volumen
+    sound_hover.set_volume(0.1)   # 10% del volumen
     buttons_hover_prev = set()
 
     # Lista de diccionarios de botones

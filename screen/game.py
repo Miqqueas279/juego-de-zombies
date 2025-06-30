@@ -1,221 +1,28 @@
 import pygame
-import random
 import math
 import os # Importar os para manejar rutas de archivos
 
+from entities.enemy import dibujar_enemigos, generar_enemigo, mover_enemigos
+from entities.player import actualizar_dash_jugador, dibujar_disparos, dibujar_jugador, disparar_jugador, init_player, mover_disparos, mover_jugador, usar_dash_jugador
 from utils.score import detectar_colision_rect # Importar funciones auxiliares
 from utils.text import draw_text, get_font
 
 # --- Constantes del Juego ---
-COLOR_JUGADOR = (0, 0, 255)  # Azul
-COLOR_NORMAL_ENEMY = (255, 0, 0) # Rojo
-COLOR_BOOSTED_ENEMY = (255, 100, 0) # Naranja (más rápido)
-COLOR_KAMIKAZE_ENEMY = (255, 255, 0) # Amarillo (kamikaze)
-COLOR_DISPARO_JUGADOR = (0, 255, 0) # Verde
+GREEN = (0, 255, 0)
 
 # Nuevo color para los corazones "vacíos" (vidas perdidas)
 COLOR_CORAZON_PERDIDO = (50, 50, 50, 150) # Gris oscuro semi-transparente (con transparencia)
 
-VELOCIDAD_JUGADOR_BASE = 5
-VELOCIDAD_DISPARO_JUGADOR = 10
-VELOCIDAD_ENEMIGO_BASE = 2
-
 VIDAS_INICIALES = 3
-
 # Frecuencia de generación de enemigos
 COOLDOWN_GENERACION_ENEMIGO_FRAMES = 60 # Aproximadamente 1 enemigo por segundo a 60 FPS
-# Probabilidades de tipos de enemigos
-PROBABILIDAD_BOOSTED = 0.2 # 20% de probabilidad de enemigo con boost
-PROBABILIDAD_KAMIKAZE = 0.1 # 10% de probabilidad de kamikaze
-# Multiplicadores de velocidad para enemigos especiales
-FACTOR_VELOCIDAD_BOOSTED = 1.5 # Los enemigos con boost son 50% más rápidos
-FACTOR_VELOCIDAD_KAMIKAZE = 3.0 # Los kamikazes son 200% más rápidos
-VIDA_KAMIKAZE = 1 # Los kamikazes tienen poca vida
-# Puntos que otorgan los enemigos
-PUNTAJE_NORMAL = 10
-PUNTAJE_BOOSTED = 15
-PUNTAJE_KAMIKAZE = 25
-
-# Constantes del Dash del Jugador
-DASH_COOLDOWN_FRAMES = 180 # 3 segundos a 60 FPS
-DASH_DURATION_FRAMES = 15  # Duración del dash en frames
-DASH_VELOCIDAD_MULTIPLIER = 2.5 # Multiplicador de velocidad durante el dash
-
 # Rutas de imágenes
 # Obtener el directorio base del script actual
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Cargamos la spritesheet completa 'icons.png'
 SPRITESHEET_ICONS_PATH = os.path.join(BASE_DIR, 'assets\\image', 'icons.png') 
 
 # --- Funciones de Manejo de Entidades ---
-
-def init_player(ANCHO_PANTALLA, ALTO_PANTALLA):
-    """
-    Inicializa los datos del jugador como un diccionario.
-    """
-    player_ancho = 50
-    player_alto = 50
-    return {
-        'rect': pygame.Rect(ANCHO_PANTALLA // 2 - player_ancho // 2, ALTO_PANTALLA - 70 - player_alto // 2, player_ancho, player_alto),
-        'velocidad': VELOCIDAD_JUGADOR_BASE,
-        'vidas': VIDAS_INICIALES,
-        'puntos': 0,
-        'ultima_vez_disparo': 0, # Tiempo en frames desde el último disparo
-        'cooldown_disparo': 20, # Frames a esperar entre disparos
-        'en_dash': False,
-        'dash_timer': 0,
-        'dash_cooldown_timer': 0
-    }
-
-def mover_jugador(player_data, keys, ANCHO_PANTALLA):
-    """
-    Actualiza la posición del jugador según las teclas presionadas.
-    """
-    current_speed = player_data['velocidad']
-    if player_data['en_dash']:
-        current_speed *= DASH_VELOCIDAD_MULTIPLIER
-
-    if keys[pygame.K_LEFT]:
-        player_data['rect'].x -= current_speed
-    if keys[pygame.K_RIGHT]:
-        player_data['rect'].x += current_speed
-
-    # Limitar el movimiento dentro de la pantalla
-    if player_data['rect'].left < 0:
-        player_data['rect'].left = 0
-    if player_data['rect'].right > ANCHO_PANTALLA:
-        player_data['rect'].right = ANCHO_PANTALLA
-
-def disparar_jugador(player_data, current_frames):
-    """
-    Crea un nuevo diccionario de disparo si el cooldown lo permite.
-    """
-    if current_frames - player_data['ultima_vez_disparo'] > player_data['cooldown_disparo']:
-        player_data['ultima_vez_disparo'] = current_frames
-        bullet_ancho = 5
-        bullet_alto = 15
-        return {
-            'rect': pygame.Rect(player_data['rect'].centerx - bullet_ancho // 2, player_data['rect'].top - bullet_alto, bullet_ancho, bullet_alto),
-            'velocidad': VELOCIDAD_DISPARO_JUGADOR,
-            'color': COLOR_DISPARO_JUGADOR,
-            'origen': 'jugador'
-        }
-    return None
-
-def usar_dash_jugador(player_data):
-    """
-    Activa el dash para el jugador si el cooldown lo permite.
-    """
-    if player_data['dash_cooldown_timer'] <= 0:
-        player_data['en_dash'] = True
-        player_data['dash_timer'] = DASH_DURATION_FRAMES
-        player_data['dash_cooldown_timer'] = DASH_COOLDOWN_FRAMES
-        return True # Dash activado
-    return False # Dash no activado (en cooldown)
-
-def actualizar_dash_jugador(player_data):
-    """
-    Actualiza el estado del dash y su temporizador.
-    """
-    if player_data['en_dash']:
-        player_data['dash_timer'] -= 1
-        if player_data['dash_timer'] <= 0:
-            player_data['en_dash'] = False
-    
-    if player_data['dash_cooldown_timer'] > 0:
-        player_data['dash_cooldown_timer'] -= 1
-
-def dibujar_jugador(pantalla, player_data, player_image, AZUL, BLANCO):
-    """
-    Dibuja el jugador en la pantalla.
-    """
-
-    pantalla.blit(player_image, player_data['rect'])
-
-    if player_data['en_dash']:
-        pygame.draw.rect(pantalla, BLANCO, player_data['rect'].inflate(10, 10), 2, border_radius=5)
-
-    #if player_data['en_dash']:
-    #   # Dibujar un color diferente o efecto para el dash
-    #    pygame.draw.rect(pantalla, AZUL, player_data['rect'], border_radius=5)
-    #    # Borde blanco para efecto de dash
-    #    pygame.draw.rect(pantalla, BLANCO, player_data['rect'].inflate(10, 10), 2, border_radius=5)
-    #else:
-    #    pygame.draw.rect(pantalla, COLOR_JUGADOR, player_data['rect'], border_radius=5)
-
-
-def generar_enemigo(ANCHO_PANTALLA):
-    """
-    Crea un nuevo diccionario de enemigo con propiedades aleatorias.
-    """
-    enemy_ancho = 40
-    enemy_alto = 40
-    # Posición X aleatoria en la parte superior
-    x_pos = random.randint(enemy_ancho // 2, ANCHO_PANTALLA - enemy_ancho // 2)
-    y_pos = -enemy_alto # Empieza justo fuera de la pantalla por arriba
-
-    # Propiedades base
-    velocidad_enemigo = VELOCIDAD_ENEMIGO_BASE
-    vida_enemigo = 1
-    color_enemigo = COLOR_NORMAL_ENEMY
-    puntaje_enemigo = PUNTAJE_NORMAL
-    tipo_enemigo = "normal"
-
-    # Determinar tipo de enemigo especial
-    r = random.random()
-    if r < PROBABILIDAD_KAMIKAZE:
-        tipo_enemigo = "kamikaze"
-        velocidad_enemigo = VELOCIDAD_ENEMIGO_BASE * FACTOR_VELOCIDAD_KAMIKAZE
-        vida_enemigo = VIDA_KAMIKAZE
-        color_enemigo = COLOR_KAMIKAZE_ENEMY
-        puntaje_enemigo = PUNTAJE_KAMIKAZE
-    elif r < PROBABILIDAD_KAMIKAZE + PROBABILIDAD_BOOSTED: # Suma las probabilidades para que no se solapen
-        tipo_enemigo = "boosted"
-        velocidad_enemigo = VELOCIDAD_ENEMIGO_BASE * FACTOR_VELOCIDAD_BOOSTED
-        color_enemigo = COLOR_BOOSTED_ENEMY
-        puntaje_enemigo = PUNTAJE_BOOSTED
-    
-    return {
-        'rect': pygame.Rect(x_pos - enemy_ancho // 2, y_pos - enemy_alto // 2, enemy_ancho, enemy_alto),
-        'velocidad': velocidad_enemigo,
-        'vida': vida_enemigo,
-        'tipo': tipo_enemigo,
-        'color': color_enemigo,
-        'puntos': puntaje_enemigo # Puntos que otorga al ser destruido
-    }
-
-def mover_enemigos(enemigos_list):
-    """
-    Actualiza la posición de todos los enemigos en la lista.
-    """
-    for enemigo in enemigos_list:
-        enemigo['rect'].y += enemigo['velocidad']
-
-def dibujar_enemigos(pantalla, enemigos_list, enemy_image):
-    """
-    Dibuja todos los enemigos en la pantalla.
-    """
-    for enemigo in enemigos_list:
-        pantalla.blit(enemy_image, enemigo['rect'])
-    #for enemigo in enemigos_list:
-    #   pygame.draw.rect(pantalla, enemigo['color'], enemigo['rect'], border_radius=3)
-
-def mover_disparos(disparos_list):
-    """
-    Actualiza la posición de todos los disparos en la lista.
-    """
-    for disparo in disparos_list:
-        # En este juego, los disparos del jugador van hacia arriba
-        disparo['rect'].y -= disparo['velocidad']
-
-def dibujar_disparos(pantalla, disparos_list):
-    """
-    Dibuja todos los disparos en la pantalla.
-    """
-
-    for disparo in disparos_list:
-        pygame.draw.rect(pantalla, disparo['color'], disparo['rect'])
-
 def limpiar_entidades_fuera_pantalla(enemigos_list, disparos_list, ALTO_PANTALLA):
     """
     Elimina enemigos y disparos que han salido de la pantalla.
@@ -445,10 +252,6 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
     # Pedir nombre al jugador después de que el bucle principal del juego termina
     nombre_ingresado = ""
     input_activo = True
-    # Usar una fuente diferente para esta pantalla si es necesario
-    game_over_font_title = get_font(74)
-    game_over_font_score = get_font(36)
-    game_over_font_input = get_font(36)
 
     while input_activo:
         for event in pygame.event.get():
