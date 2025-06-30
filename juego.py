@@ -424,7 +424,7 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         dibujar_disparos(pantalla, player_bullets) # Dibujar todos los disparos del jugador
 
         # Dibujar UI (vidas y puntaje)
-        draw_text(pantalla, f"Puntaje: {player['puntos']}", 15, 20, 24, BLANCO, "left", font=fuente_pequena)
+        draw_text(pantalla, f"Puntaje: {player['puntos']}", 15, 20, 24, BLANCO, "left")
         # Reemplazar el texto de vidas con los corazones
         # Pasamos el corazón rojo y el color para los corazones perdidos
         dibujar_vidas_corazones(pantalla, player['vidas'], VIDAS_INICIALES, heart_surface_local, COLOR_CORAZON_PERDIDO)
@@ -432,9 +432,9 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
         # Mostrar el estado del dash cooldown
         if player['dash_cooldown_timer'] > 0:
             tiempo_restante_dash = math.ceil(player['dash_cooldown_timer'] / fps)
-            draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 150, 10, 24, ROJO, "left", font=fuente_pequena)
+            draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 150, 10, 24, ROJO, "left")
         elif not player['en_dash']:
-            draw_text(pantalla, "Dash Listo", ANCHO_PANTALLA - 110, 20, 24, VERDE, "left", font=fuente_pequena)
+            draw_text(pantalla, "Dash Listo", ANCHO_PANTALLA - 110, 20, 24, VERDE, "left")
 
 
         pygame.display.flip() # Actualizar toda la pantalla
@@ -464,11 +464,11 @@ def main_game_loop(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_pequena, NEGR
                     nombre_ingresado += event.unicode
 
         pantalla.fill(NEGRO) # Fondo negro para la pantalla de Game Over
-        draw_text(pantalla, "GAME OVER", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 - 50, 74, ROJO, "center", font=game_over_font_title)
-        draw_text(pantalla, f"Puntaje Final: {player['puntos']}", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 20, 36, BLANCO, "center", font=game_over_font_score)
-        draw_text(pantalla, "Ingresa tu nombre:", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 80, 36, BLANCO, "center", font=game_over_font_input)
+        draw_text(pantalla, "GAME OVER", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 - 50, 74, ROJO, "center")
+        draw_text(pantalla, f"Puntaje Final: {player['puntos']}", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 20, 36, BLANCO, "center")
+        draw_text(pantalla, "Ingresa tu nombre:", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 80, 36, BLANCO, "center")
         # Mostrar el nombre ingresado y un cursor simulado
-        draw_text(pantalla, nombre_ingresado + "|", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 120, 36, BLANCO, "center", font=game_over_font_input)
+        draw_text(pantalla, nombre_ingresado + "|", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 120, 36, BLANCO, "center")
         pygame.display.flip()
 
     return player['puntos'], nombre_ingresado # Devolver el puntaje y el nombre para guardar

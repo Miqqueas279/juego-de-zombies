@@ -34,7 +34,7 @@ def draw_button(screen: pygame.Surface, button: dict, mouse_pos: tuple, button_c
     else:
         color = button_color
 
-    draw_text(screen, button['texto'], text_x, text_y, button_font.get_height(), color, "left", font=button_font)
+    draw_text(screen, button['texto'], text_x, text_y, button_font.get_height(), color, "left")
 
 def is_button_clicked(button: dict, mouse_pos: tuple) -> bool:
     """
