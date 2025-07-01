@@ -13,12 +13,12 @@ from utils.text import draw_text, get_font
 # --- Constantes del Juego ---
 GREEN = (0, 255, 0)
 
-# Nuevo color para los corazones "vacíos" (vidas perdidas)
 VIDAS_INICIALES = 3
 VIDAS_MAXIMAS = 5
 COLOR_CORAZON_PERDIDO = (50, 50, 50, 150) 
 # Frecuencia de generación de enemigos
 COOLDOWN_GENERACION_ENEMIGO_FRAMES = 60 # Aproximadamente 1 enemigo por segundo a 60 FPS
+
 # Rutas de imágenes
 # Obtener el directorio base del script actual
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -31,7 +31,7 @@ ZOMBIE_BOOSTED_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zom
 ZOMBIE_KAMIKAZE_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zombie3.PNG') # Zombie kamikaze
 
 # Ruta de la spritesheet del jugador
-PLAYER_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'prota1.PNG') # Asegúrate de que esta ruta sea correcta
+PLAYER_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'prota1.PNG') 
 
 
 # --- Funciones de Manejo de Entidades ---
@@ -57,7 +57,6 @@ def limpiar_entidades_fuera_pantalla(enemigos_list: list, disparos_list: list, p
         i -= 1
     
     # Limpiar power-ups (que se mueven de derecha a izquierda y ya no están activos)
-    # NO USAR LIST COMPREHENSION
     temp_powerups_list = []
     i = 0
     while i < len(powerups_list):
@@ -103,6 +102,7 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list, sound_pe
         if detectar_colision_rect(player_data['rect'], enemy['rect']):
             player_data['vidas'] -= 1
             player_impact_sound.play()
+<<<<<<< HEAD
             sound_perder_corazon.play()
             del enemigos_list[i]
             print(f"[DEBUG] Vidas restantes: {player_data['vidas']}")
@@ -110,6 +110,12 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list, sound_pe
                 print("[DEBUG] Jugador sin vidas. Fin del juego.")
                 return True
         i -= 1
+=======
+            del enemigos_list[i_enemy]
+            if player_data['vidas'] <= 0:
+                return True # Retorna True para indicar Game Over
+        i_enemy -= 1
+>>>>>>> 5e271098d3a4729a1b0327948bdf890340073621
 
     return False
 
@@ -141,12 +147,13 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
     fondo_surface = pygame.image.load(FONDO_PATH).convert()
     fondo_surface = pygame.transform.scale(fondo_surface, (ANCHO_PANTALLA, ALTO_PANTALLA))
 
+    pygame.mixer.music.load("assets\\sounds\\horror-258261.mp3")
+    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.play(-1)
+
     # Cargar la spritesheet del jugador
     player_spritesheet = pygame.image.load(PLAYER_SPRITESHEET_PATH).convert_alpha()
-    # Escalar la spritesheet completa del jugador si es necesario
-    # Asumiendo que prota1.PNG es 3x4 frames de 32x32 = 96x128
-    player_spritesheet = pygame.transform.scale(player_spritesheet, (PLAYER_FRAME_WIDTH * PLAYER_TOTAL_FRAMES_PER_ROW, PLAYER_FRAME_HEIGHT * 4)) # Ajusta el '4' a las filas totales de tu spritesheet
-
+    player_spritesheet = pygame.transform.scale(player_spritesheet, (PLAYER_FRAME_WIDTH * PLAYER_TOTAL_FRAMES_PER_ROW, PLAYER_FRAME_HEIGHT * 4)) 
 
     powerup_imagenes = {
         'vida': pygame.transform.scale(pygame.image.load(os.path.join(BASE_DIR, 'assets', 'image', 'powerup_vida.png')), (30, 30)),
@@ -159,7 +166,7 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
         "boosted": pygame.image.load(ZOMBIE_BOOSTED_SPRITESHEET_PATH).convert_alpha(),
         "kamikaze": pygame.image.load(ZOMBIE_KAMIKAZE_SPRITESHEET_PATH).convert_alpha()
     }
-    # Asegúrate de que las spritesheets de zombies tengan el tamaño correcto o escálalas si es necesario
+
     for tipo in zombie_spritesheets:
         zombie_spritesheets[tipo] = pygame.transform.scale(zombie_spritesheets[tipo], 
                                                            (ZOMBIE_FRAME_WIDTH * 3, ZOMBIE_FRAME_HEIGHT * 4)) # Asumiendo 3x4 frames por spritesheet
@@ -176,15 +183,14 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
     sound_aumentar_velocidad.set_volume(0.4)
     shoot_sound.set_volume(0.1)
 
-    # Cargar y procesar la imagen del corazón una vez (SIN TRY-EXCEPT)
-    # Si hay un error de carga, el programa se detendrá aquí, como espera el profesor.
-    spritesheet_icons = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha() # Renombrado para evitar confusión
+    # Cargar y procesar la imagen del corazón una vez 
+    spritesheet_icons = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha() 
 
     # Definir el rectángulo del corazón lleno en la spritesheet (x, y, ancho, alto)
     HEART_SPRITE_RECT_SOURCE = pygame.Rect(52, 0, 9, 9) 
 
     # Extraer el corazón lleno
-    heart_surface_local = spritesheet_icons.subsurface(HEART_SPRITE_RECT_SOURCE) # Usar spritesheet_icons
+    heart_surface_local = spritesheet_icons.subsurface(HEART_SPRITE_RECT_SOURCE) 
     
     # Escalar el corazón para que sea más visible
     SCALE_SIZE = (30, 30) # Tamaño deseado para los corazones en pantalla
@@ -285,10 +291,9 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
         # Dibujar UI (vidas y puntaje)
         # Ajustar posición del puntaje para el layout horizontal
         draw_text(pantalla, f"Puntaje: {player['puntos']}\n", 15, 20, 24, BLANCO, "left") # Agregué un salto de línea para separar del dash CD
-        # Reemplazar el texto de vidas con los corazones (posición ajustada en dibujar_vidas_corazones)
         dibujar_vidas_corazones(pantalla, player['vidas'], VIDAS_MAXIMAS, heart_surface_local, COLOR_CORAZON_PERDIDO) # Pasar VIDAS_MAXIMAS
         
-        # Mostrar el estado del dash cooldown (ajustar posición para el layout horizontal)
+        # Mostrar el estado del dash cooldown
         if player['dash_cooldown_timer'] > 0:
             tiempo_restante_dash = math.ceil(player['dash_cooldown_timer'] / fps)
             draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 110, 20, 24, ROJO, "left")
@@ -302,10 +307,6 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
         reloj.tick(fps) # Controlar los FPS del juego
 
     #Lectura de archivo config temporal
-    # Esta parte del código se ejecuta DESPUÉS de que el bucle del juego termina.
-    # Si show_game_over ya maneja la lectura de config, esta línea puede ser redundante.
-    # Si config.json no existe o hay un error, esto podría causar un problema si no se maneja.
-    # Considerando la restricción de NO usar try-except, asegúrate de que config.json siempre esté presente.
     with open(os.path.join(BASE_DIR, "config.json"), "r", encoding="utf-8") as file: # Usar os.path.join para la ruta
         config = json.load(file)
 

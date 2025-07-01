@@ -1,6 +1,7 @@
 import pygame
 import sys
 import json
+from screen.credits import show_credits
 from screen.game import main_game_loop
 from screen.menu import main_menu
 from screen.ranking import show_ranking
@@ -65,8 +66,7 @@ def main():
             scores = load_scores()
             show_ranking(PANTALLA, config["screen"], config["font_size"], config["colors"], scores)
         elif option == "creditos":
-            # Por ahora, un simple mensaje y vuelve al menú.
-            print("Mostrar créditos (aún no implementado)")
+            show_credits(PANTALLA, config["screen"], config["font_size"], config["colors"])
         elif option == "salir":
             pygame.quit()
             sys.exit()

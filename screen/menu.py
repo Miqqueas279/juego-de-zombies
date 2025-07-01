@@ -7,6 +7,12 @@ def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pyga
     Muestra el menú principal y maneja la interacción con los botones.
     Retorna la acción seleccionada ('jugar', 'ranking', 'creditos', 'salir').
     """
+
+    pygame.mixer.music.load("assets\\sounds\\Infested City.ogg")
+    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.play(-1)
+
+
     title_img = pygame.image.load("assets\\image\\title.png").convert_alpha()
     title_img = pygame.transform.scale(title_img, (400, 100))
 
