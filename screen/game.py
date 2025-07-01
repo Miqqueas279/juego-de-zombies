@@ -14,7 +14,7 @@ GREEN = (0, 255, 0)
 
 # Nuevo color para los corazones "vacíos" (vidas perdidas)
 VIDAS_INICIALES = 3
-VIDAS_MAXIMAS = 10
+VIDAS_MAXIMAS = 5
 COLOR_CORAZON_PERDIDO = (50, 50, 50, 150) 
 # Frecuencia de generación de enemigos
 COOLDOWN_GENERACION_ENEMIGO_FRAMES = 60 # Aproximadamente 1 enemigo por segundo a 60 FPS
