@@ -1,6 +1,7 @@
 import pygame
 import math
 import os # Importar os para manejar rutas de archivos
+from entities.powerup import crear_powerup, mover_powerups, dibujar_powerups, recoger_powerups
 
 from entities.enemy import dibujar_enemigos, generar_enemigo, mover_enemigos, ZOMBIE_FRAME_WIDTH, ZOMBIE_FRAME_HEIGHT # Importar constantes de animación
 from entities.player import actualizar_dash_jugador, dibujar_disparos, dibujar_jugador, disparar_jugador, init_player, mover_disparos, mover_jugador, usar_dash_jugador
@@ -27,7 +28,7 @@ ZOMBIE_NORMAL_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zomb
 ZOMBIE_BOOSTED_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zombie2.PNG') # Zombie boosted
 ZOMBIE_KAMIKAZE_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zombie3.PNG') # Zombie kamikaze
 
-
+ 
 # --- Funciones de Manejo de Entidades ---
 def limpiar_entidades_fuera_pantalla(enemigos_list: list, disparos_list: list, ANCHO_PANTALLA: int) -> None:
     """
@@ -138,6 +139,10 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
     # Escalar imagen del jugador al tamaño del rectángulo
     player_image = pygame.transform.scale(player_image, (50, 50))   # Tamaño del jugador
 
+    powerup_imagenes = {
+        'vida': pygame.transform.scale(pygame.image.load(os.path.join(BASE_DIR, 'assets', 'image', 'powerup_vida.png')), (30, 30)),
+        'velocidad': pygame.transform.scale(pygame.image.load(os.path.join(BASE_DIR, 'assets', 'image', 'powerup_velocidad.png')), (30, 30))
+}
     # Cargar las spritesheets de zombies para cada tipo
     zombie_spritesheets = {
         "normal": pygame.image.load(ZOMBIE_NORMAL_SPRITESHEET_PATH).convert_alpha(),
@@ -182,6 +187,10 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
     player_bullets = []
 
     frames_desde_ultima_generacion_enemigo = 0 # Contador para la generación de enemigos
+    powerups = []
+    frames_para_nuevo_powerup = 0
+    POWERUP_INTERVALO_FRAMES = 600  # cada 10 segundos (60 FPS * 10)
+
 
     running = True
     while running:
@@ -203,32 +212,49 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
                     usar_dash_jugador(player)
 
         # --- Movimiento del Jugador ---
-        keys = pygame.key.get_pressed() # Obtener todas las teclas presionadas
-        # Las teclas de movimiento ahora son ARRIBA y ABAJO para el movimiento vertical
-        mover_jugador(player, keys, ALTO_PANTALLA) 
+        keys = pygame.key.get_pressed()
+        mover_jugador(player, keys, ALTO_PANTALLA)
         actualizar_dash_jugador(player) # Actualizar el temporizador del dash
 
+        frames_para_nuevo_powerup += 1
+        if frames_para_nuevo_powerup >= POWERUP_INTERVALO_FRAMES:
+            powerups.append(crear_powerup(ANCHO_PANTALLA, ALTO_PANTALLA))
+            frames_para_nuevo_powerup = 0
         # --- Generación de Enemigos ---
         frames_desde_ultima_generacion_enemigo += 1
         if frames_desde_ultima_generacion_enemigo >= COOLDOWN_GENERACION_ENEMIGO_FRAMES:
-            # Ahora pasamos ANCHO_PANTALLA y ALTO_PANTALLA a generar_enemigo
             enemigos.append(generar_enemigo(ANCHO_PANTALLA, ALTO_PANTALLA))
             frames_desde_ultima_generacion_enemigo = 0 # Reiniciar el contador
 
         # --- Movimiento de Enemigos y Disparos ---
         # Ahora pasamos player_data a mover_enemigos para la lógica kamikaze
-        mover_enemigos(enemigos, player) 
+        mover_enemigos(enemigos, player)
         mover_disparos(player_bullets)
+        mover_powerups(powerups)
+
+        frames_para_nuevo_powerup += 1
+        if frames_para_nuevo_powerup >= POWERUP_INTERVALO_FRAMES:
+            powerups.append(crear_powerup(ANCHO_PANTALLA, ALTO_PANTALLA))
+            frames_para_nuevo_powerup = 0
+
+# Revisar si el jugador recoge algún powerup
+        recoger_powerups(player, powerups)
+
+# --- Colisiones ---
+        game_over = manejar_colisiones(player, enemigos, player_bullets)
 
         # --- Colisiones ---
         # La función de colisiones también elimina los objetos impactados y actualiza puntos/vidas
         game_over = manejar_colisiones(player, enemigos, player_bullets)
         if game_over:
             running = False # Si el jugador pierde todas las vidas, terminar el juego
+        
+        recoger_powerups(player, powerups)
 
         # --- Eliminar elementos fuera de pantalla ---
         # Ahora pasamos ANCHO_PANTALLA para la limpieza horizontal
         limpiar_entidades_fuera_pantalla(enemigos, player_bullets, ANCHO_PANTALLA)
+        powerups = [p for p in powerups if p['activo'] and p['rect'].right > 0]
 
         # --- Dibujar ---
         pantalla.blit(fondo_surface, (0, 0))
@@ -237,23 +263,25 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
         # Ahora pasamos el diccionario de spritesheets de zombies a dibujar_enemigos
         dibujar_enemigos(pantalla, enemigos, zombie_spritesheets) 
         dibujar_disparos(pantalla, player_bullets) # Dibujar todos los disparos del jugador
+        dibujar_powerups(pantalla, powerups, powerup_imagenes)
 
         # Dibujar UI (vidas y puntaje)
         # Ajustar posición del puntaje para el layout horizontal
         draw_text(pantalla, f"Puntaje: {player['puntos']}", 15, 20, 24, BLANCO, "left")
-        # Reemplazar el texto de vidas con los corazones (posición ajustada en dibujar_vidas_corazones)
         dibujar_vidas_corazones(pantalla, player['vidas'], VIDAS_INICIALES, heart_surface_local, COLOR_CORAZON_PERDIDO)
-        
-        # Mostrar el estado del dash cooldown (ajustar posición para el layout horizontal)
+
         if player['dash_cooldown_timer'] > 0:
             tiempo_restante_dash = math.ceil(player['dash_cooldown_timer'] / fps)
             draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 110, 20, 24, ROJO, "left")
         elif not player['en_dash']:
             draw_text(pantalla, "Dash Listo", ANCHO_PANTALLA - 110, 20, 24, VERDE, "left")
 
-
+        dibujar_powerups(pantalla, powerups, powerup_imagenes)
+        
         pygame.display.flip() # Actualizar toda la pantalla
-
+        powerups = [p for p in powerups if p['activo']]
+        
+        pygame.display.flip()
         reloj.tick(fps) # Controlar los FPS del juego
 
     # --- Game Over Screen ---
