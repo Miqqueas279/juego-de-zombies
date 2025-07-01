@@ -7,7 +7,7 @@ import os
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 SCORES_FILE = os.path.join(BASE_DIR, 'datos', 'puntajes.json')
 
-def load_scores():
+def load_scores() -> list:
     """
     Carga los puntajes desde el archivo JSON.
     Si el archivo no existe o está vacío, devuelve una lista vacía.
