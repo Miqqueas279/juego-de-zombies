@@ -12,9 +12,9 @@ from utils.text import draw_text, get_font
 GREEN = (0, 255, 0)
 
 # Nuevo color para los corazones "vacíos" (vidas perdidas)
-COLOR_CORAZON_PERDIDO = (50, 50, 50, 150) # Gris oscuro semi-transparente (con transparencia)
-
 VIDAS_INICIALES = 3
+VIDAS_MAXIMAS = 10
+COLOR_CORAZON_PERDIDO = (50, 50, 50, 150) 
 # Frecuencia de generación de enemigos
 COOLDOWN_GENERACION_ENEMIGO_FRAMES = 60 # Aproximadamente 1 enemigo por segundo a 60 FPS
 # Rutas de imágenes
@@ -61,66 +61,78 @@ def manejar_colisiones(player_data: dict, enemigos_list: list, player_bullets_li
     player_impact_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "impact.mp3"))
     player_impact_sound.set_volume(0.3)
     enemy_impact_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "enemy_impact.mp3"))
-    enemy_impact_sound.set_volume(0.1) 
+    enemy_impact_sound.set_volume(0.1)
 
-    # Colisión disparos del jugador con enemigos
+    # Colisión disparo vs enemigo
     i_bullet = len(player_bullets_list) - 1
     while i_bullet >= 0:
         bullet = player_bullets_list[i_bullet]
         j_enemy = len(enemigos_list) - 1
-        bullet_hit = False # Bandera para saber si la bala impactó
+        bullet_hit = False
         while j_enemy >= 0:
             enemy = enemigos_list[j_enemy]
             if detectar_colision_rect(bullet['rect'], enemy['rect']):
                 enemy['vida'] -= 1
                 enemy_impact_sound.play()
-                bullet_hit = True # La bala impactó, debe ser eliminada
+                bullet_hit = True
                 if enemy['vida'] <= 0:
-                    player_data['puntos'] += enemy['puntos'] # Sumar puntos por enemigo destruido
-                    del enemigos_list[j_enemy] # Eliminar enemigo
-                break # Salir del bucle interno, el disparo ya impactó
+                    player_data['puntos'] += enemy['puntos']
+                    del enemigos_list[j_enemy]
+                break
             j_enemy -= 1
-        
         if bullet_hit:
-            del player_bullets_list[i_bullet] # Eliminar el disparo
+            del player_bullets_list[i_bullet]
         i_bullet -= 1
 
-    # Colisión enemigo con jugador
+    # Colisión enemigo vs jugador
     i_enemy = len(enemigos_list) - 1
     while i_enemy >= 0:
         enemy = enemigos_list[i_enemy]
         if detectar_colision_rect(player_data['rect'], enemy['rect']):
             player_data['vidas'] -= 1
             player_impact_sound.play()
-            del enemigos_list[i_enemy] # El enemigo se destruye al impactar al jugador
+            del enemigos_list[i_enemy]
+            print(f"[DEBUG] Jugador recibió daño. Vidas restantes: {player_data['vidas']}")
             if player_data['vidas'] <= 0:
-                game_over = True # Juego terminado
-                break # No es necesario seguir revisando enemigos
+                print("[DEBUG] Jugador sin vidas. Fin del juego.")
+                return True
         i_enemy -= 1
-    
-    return game_over
 
-def dibujar_vidas_corazones(pantalla: pygame.Surface, vidas_actuales: int, vidas_maximas: int, heart_image_surface: pygame.Surface, lost_heart_color: tuple) -> None:
-    """
-    Dibuja los corazones de vida al estilo Minecraft.
-    Posicionados para un layout horizontal.
-    """
-    x_offset = 10 # Posición inicial X para los corazones
-    y_offset = 40 # Posición Y para los corazones
-    spacing = heart_image_surface.get_width() + 5 # Espacio entre corazones
+    return False
 
-    for i in range(vidas_maximas):
+
+def recoger_powerups(powerups: list, player_data: dict) -> None:
+    """
+    Verifica colisiones entre el jugador y los powerups.
+    Si recoge uno, aplica el efecto.
+    """
+    i = len(powerups) - 1
+    while i >= 0:
+        powerup = powerups[i]
+        if player_data['rect'].colliderect(powerup['rect']):
+            if powerup['tipo'] == 'vida':
+                if player_data['vidas'] < VIDAS_MAXIMAS:
+                    player_data['vidas'] += 1
+            del powerups[i]
+        i -= 1
+
+
+def dibujar_vidas_corazones(pantalla: pygame.Surface, vidas_actuales: int, heart_image_surface: pygame.Surface, lost_heart_color: tuple) -> None:
+    """
+    Dibuja corazones llenos y vacíos hasta VIDAS_MAXIMAS.
+    """
+    x_offset = 10
+    y_offset = 40
+    spacing = heart_image_surface.get_width() + 5
+
+    for i in range(VIDAS_MAXIMAS):
+        x = x_offset + i * spacing
         if i < vidas_actuales:
-            # Dibujar corazón rojo (vida actual)
-            pantalla.blit(heart_image_surface, (x_offset + i * spacing, y_offset))
+            pantalla.blit(heart_image_surface, (x, y_offset))
         else:
-            # Dibujar un rectángulo gris oscuro semi-transparente para la vida perdida
-            lost_heart_rect = pygame.Rect(x_offset + i * spacing, y_offset, 
-                                          heart_image_surface.get_width(), 
-                                          heart_image_surface.get_height()) 
-            s = pygame.Surface(lost_heart_rect.size, pygame.SRCALPHA) # Superficie con canal alfa
-            s.fill(lost_heart_color) # Rellenar con el color gris oscuro semi-transparente
-            pantalla.blit(s, lost_heart_rect)
+            s = pygame.Surface(heart_image_surface.get_size(), pygame.SRCALPHA)
+            s.fill(lost_heart_color)
+            pantalla.blit(s, (x, y_offset))
 
 
 # --- Bucle Principal del Juego (main_game_loop) ---
@@ -231,6 +243,9 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
         mover_enemigos(enemigos, player)
         mover_disparos(player_bullets)
         mover_powerups(powerups)
+        game_over = manejar_colisiones(player, enemigos, player_bullets)
+        if game_over:
+            running = False
 
         frames_para_nuevo_powerup += 1
         if frames_para_nuevo_powerup >= POWERUP_INTERVALO_FRAMES:
@@ -238,7 +253,8 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
             frames_para_nuevo_powerup = 0
 
 # Revisar si el jugador recoge algún powerup
-        recoger_powerups(player, powerups)
+        recoger_powerups(powerups, player)
+
 
 # --- Colisiones ---
         game_over = manejar_colisiones(player, enemigos, player_bullets)
@@ -248,8 +264,7 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
         game_over = manejar_colisiones(player, enemigos, player_bullets)
         if game_over:
             running = False # Si el jugador pierde todas las vidas, terminar el juego
-        
-        recoger_powerups(player, powerups)
+
 
         # --- Eliminar elementos fuera de pantalla ---
         # Ahora pasamos ANCHO_PANTALLA para la limpieza horizontal
@@ -268,7 +283,8 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
         # Dibujar UI (vidas y puntaje)
         # Ajustar posición del puntaje para el layout horizontal
         draw_text(pantalla, f"Puntaje: {player['puntos']}", 15, 20, 24, BLANCO, "left")
-        dibujar_vidas_corazones(pantalla, player['vidas'], VIDAS_INICIALES, heart_surface_local, COLOR_CORAZON_PERDIDO)
+        dibujar_vidas_corazones(pantalla, player['vidas'], heart_surface_local, COLOR_CORAZON_PERDIDO)
+
 
         if player['dash_cooldown_timer'] > 0:
             tiempo_restante_dash = math.ceil(player['dash_cooldown_timer'] / fps)

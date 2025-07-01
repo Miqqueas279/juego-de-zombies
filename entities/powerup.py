@@ -23,11 +23,12 @@ def dibujar_powerups(pantalla, powerups, imagenes):
         if p['activo']:
             pantalla.blit(imagenes[p['tipo']], p['rect'])
 
-def recoger_powerups(player, powerups):
+def recoger_powerups(player, powerups, VIDAS_MAXIMAS):
     for p in powerups:
         if p['activo'] and player['rect'].colliderect(p['rect']):
             if p['tipo'] == 'vida':
-                player['vidas'] += 1
+                if player['vidas'] < VIDAS_MAXIMAS:
+                    player['vidas'] += 1
             elif p['tipo'] == 'velocidad':
                 player['velocidad'] += 1
             p['activo'] = False

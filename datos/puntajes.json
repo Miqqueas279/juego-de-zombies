@@ -1,5 +1,9 @@
 [
     {
+        "nombre": "miqueas",
+        "puntaje": 775
+    },
+    {
         "nombre": "Ezequiel",
         "puntaje": 305
     },
@@ -8,15 +12,11 @@
         "puntaje": 250
     },
     {
+        "nombre": "kol",
+        "puntaje": 200
+    },
+    {
         "nombre": "",
         "puntaje": 140
-    },
-    {
-        "nombre": "    ",
-        "puntaje": 135
-    },
-    {
-        "nombre": "\u001b",
-        "puntaje": 100
     }
 ]
