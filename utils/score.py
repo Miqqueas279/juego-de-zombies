@@ -1,9 +1,8 @@
 import json
 import os
 
-# --- Manejo de puntajes (separado aquí para que juego.py y ranking.py lo importen) ---
-# Asegúrate de que la carpeta 'datos' exista.
-# Esto es para que funcione en entornos donde se ejecuta desde un directorio diferente
+# --- Manejo de puntajes  ---
+
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 SCORES_FILE = os.path.join(BASE_DIR, 'datos', 'puntajes.json')
 
@@ -29,19 +28,19 @@ def save_scores(scores):
     y limitados al top 5.
     Crea la carpeta 'datos' si no existe.
     """
-    # Ordenar los puntajes de mayor a menor sin list comprehension
+    # Ordenar los puntajes de mayor a menor 
     scores_a_ordenar = []
     for s in scores:
         scores_a_ordenar.append(s) # Copiar la lista
 
-    # Algoritmo de burbuja para ordenar la lista sin sorted() ni list comprehension
+    # Algoritmo de burbuja para ordenar la lista
     n = len(scores_a_ordenar)
     for i in range(n - 1):
         for j in range(0, n - i - 1):
             if scores_a_ordenar[j]['puntaje'] < scores_a_ordenar[j+1]['puntaje']:
                 scores_a_ordenar[j], scores_a_ordenar[j+1] = scores_a_ordenar[j+1], scores_a_ordenar[j]
     
-    # Tomar los 5 mejores puntajes sin list comprehension
+    # Tomar los 5 mejores puntajes
     top_5_scores = []
     count = 0
     for score in scores_a_ordenar:
