@@ -1,12 +1,11 @@
-import json
 import pygame
 import math
 import os # Importar os para manejar rutas de archivos
 from entities.powerup import crear_powerup, mover_powerups, dibujar_powerups, recoger_powerups
 
 from entities.enemy import dibujar_enemigos, generar_enemigo, mover_enemigos, ZOMBIE_FRAME_WIDTH, ZOMBIE_FRAME_HEIGHT # Importar constantes de animación
-from entities.player import actualizar_dash_jugador, dibujar_disparos, dibujar_jugador, disparar_jugador, init_player, mover_disparos, mover_jugador, usar_dash_jugador
-from screen.game_over import show_game_over
+from entities.player import actualizar_dash_jugador, dibujar_disparos, dibujar_jugador, disparar_jugador, init_player, mover_disparos, mover_jugador, usar_dash_jugador, PLAYER_FRAME_WIDTH, PLAYER_FRAME_HEIGHT, PLAYER_TOTAL_FRAMES_PER_ROW # Importar constantes de animación del jugador
+from screen.game_over import show_game_over # Asumo que esta función existe en screen/game_over.py
 from utils.collision import detectar_colision_rect # Importar funciones auxiliares desde el módulo correcto
 from utils.text import draw_text, get_font
 
@@ -30,11 +29,14 @@ ZOMBIE_NORMAL_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zomb
 ZOMBIE_BOOSTED_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zombie2.PNG') # Zombie boosted
 ZOMBIE_KAMIKAZE_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zombie3.PNG') # Zombie kamikaze
 
- 
+# Ruta de la spritesheet del jugador
+PLAYER_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'prota1.PNG') # Asegúrate de que esta ruta sea correcta
+
+
 # --- Funciones de Manejo de Entidades ---
-def limpiar_entidades_fuera_pantalla(enemigos_list: list, disparos_list: list, ANCHO_PANTALLA: int) -> None:
+def limpiar_entidades_fuera_pantalla(enemigos_list: list, disparos_list: list, powerups_list: list, ANCHO_PANTALLA: int) -> None:
     """
-    Elimina enemigos y disparos que han salido de la pantalla en un juego horizontal.
+    Elimina enemigos, disparos y power-ups que han salido de la pantalla en un juego horizontal.
     Iteramos hacia atrás para poder eliminar elementos de la lista sin problemas de índice.
     """
     # Limpiar enemigos (que se mueven de derecha a izquierda)
@@ -52,6 +54,18 @@ def limpiar_entidades_fuera_pantalla(enemigos_list: list, disparos_list: list, A
         if disparos_list[i]['rect'].left > ANCHO_PANTALLA:
             del disparos_list[i]
         i -= 1
+    
+    # Limpiar power-ups (que se mueven de derecha a izquierda y ya no están activos)
+    # NO USAR LIST COMPREHENSION
+    temp_powerups_list = []
+    i = 0
+    while i < len(powerups_list):
+        if powerups_list[i]['activo'] and powerups_list[i]['rect'].right > 0:
+            temp_powerups_list.append(powerups_list[i])
+        i += 1
+    # Asignar la lista filtrada de vuelta
+    powerups_list[:] = temp_powerups_list # Esto modifica la lista original en su lugar
+
 
 def manejar_colisiones(player_data: dict, enemigos_list: list, player_bullets_list: list) -> bool:
     """
@@ -97,29 +111,13 @@ def manejar_colisiones(player_data: dict, enemigos_list: list, player_bullets_li
             print(f"[DEBUG] Jugador recibió daño. Vidas restantes: {player_data['vidas']}")
             if player_data['vidas'] <= 0:
                 print("[DEBUG] Jugador sin vidas. Fin del juego.")
-                return True
+                return True # Retorna True para indicar Game Over
         i_enemy -= 1
 
     return False
 
 
-def recoger_powerups(powerups: list, player_data: dict) -> None:
-    """
-    Verifica colisiones entre el jugador y los powerups.
-    Si recoge uno, aplica el efecto.
-    """
-    i = len(powerups) - 1
-    while i >= 0:
-        powerup = powerups[i]
-        if player_data['rect'].colliderect(powerup['rect']):
-            if powerup['tipo'] == 'vida':
-                if player_data['vidas'] < VIDAS_MAXIMAS:
-                    player_data['vidas'] += 1
-            del powerups[i]
-        i -= 1
-
-
-def dibujar_vidas_corazones(pantalla: pygame.Surface, vidas_actuales: int, heart_image_surface: pygame.Surface, lost_heart_color: tuple) -> None:
+def dibujar_vidas_corazones(pantalla: pygame.Surface, vidas_actuales: int, vidas_maximas: int, heart_image_surface: pygame.Surface, lost_heart_color: tuple) -> None:
     """
     Dibuja corazones llenos y vacíos hasta VIDAS_MAXIMAS.
     """
@@ -127,7 +125,7 @@ def dibujar_vidas_corazones(pantalla: pygame.Surface, vidas_actuales: int, heart
     y_offset = 40
     spacing = heart_image_surface.get_width() + 5
 
-    for i in range(VIDAS_MAXIMAS):
+    for i in range(vidas_maximas): # Iterar hasta VIDAS_MAXIMAS
         x = x_offset + i * spacing
         if i < vidas_actuales:
             pantalla.blit(heart_image_surface, (x, y_offset))
@@ -138,7 +136,7 @@ def dibujar_vidas_corazones(pantalla: pygame.Surface, vidas_actuales: int, heart
 
 
 # --- Bucle Principal del Juego (main_game_loop) ---
-def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA: int, fuente_pequena: pygame.font.Font, NEGRO: tuple, BLANCO: tuple, ROJO: tuple, VERDE: tuple, AZUL: tuple) -> tuple:
+def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA: int, fuente_pequena: pygame.font.Font, NEGRO: tuple, BLANCO: tuple, ROJO: tuple, VERDE: tuple, AZUL: tuple) -> tuple | None:
     """
     Gestiona la lógica principal de la partida.
     Retorna el puntaje final y el nombre del jugador si el juego termina.
@@ -147,16 +145,18 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
     fondo_surface = pygame.image.load(FONDO_PATH).convert()
     fondo_surface = pygame.transform.scale(fondo_surface, (ANCHO_PANTALLA, ALTO_PANTALLA))
 
-    PLAYER_IMAGE_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'player.png')
-    
-    player_image = pygame.image.load(PLAYER_IMAGE_PATH).convert_alpha()
-    # Escalar imagen del jugador al tamaño del rectángulo
-    player_image = pygame.transform.scale(player_image, (50, 50))   # Tamaño del jugador
+    # Cargar la spritesheet del jugador
+    player_spritesheet = pygame.image.load(PLAYER_SPRITESHEET_PATH).convert_alpha()
+    # Escalar la spritesheet completa del jugador si es necesario
+    # Asumiendo que prota1.PNG es 3x4 frames de 32x32 = 96x128
+    player_spritesheet = pygame.transform.scale(player_spritesheet, (PLAYER_FRAME_WIDTH * PLAYER_TOTAL_FRAMES_PER_ROW, PLAYER_FRAME_HEIGHT * 4)) # Ajusta el '4' a las filas totales de tu spritesheet
+
 
     powerup_imagenes = {
         'vida': pygame.transform.scale(pygame.image.load(os.path.join(BASE_DIR, 'assets', 'image', 'powerup_vida.png')), (30, 30)),
         'velocidad': pygame.transform.scale(pygame.image.load(os.path.join(BASE_DIR, 'assets', 'image', 'powerup_velocidad.png')), (30, 30))
-}
+    }
+    
     # Cargar las spritesheets de zombies para cada tipo
     zombie_spritesheets = {
         "normal": pygame.image.load(ZOMBIE_NORMAL_SPRITESHEET_PATH).convert_alpha(),
@@ -167,9 +167,7 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
     for tipo in zombie_spritesheets:
         zombie_spritesheets[tipo] = pygame.transform.scale(zombie_spritesheets[tipo], 
                                                            (ZOMBIE_FRAME_WIDTH * 3, ZOMBIE_FRAME_HEIGHT * 4)) # Asumiendo 3x4 frames por spritesheet
-        # Nota: El 3 y el 4 son el número de columnas y filas en tu spritesheet.
-        # zombie1.PNG, zombie2.PNG, zombie3.PNG parecen tener 3 columnas y 4 filas de sprites.
-        # Si solo quieres el ciclo de caminata, tendrías que recortar la spritesheet o ajustar los cálculos de frame.
+        
 
 
     shoot_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "player_shoot.mp3"))
@@ -177,13 +175,13 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
 
     # Cargar y procesar la imagen del corazón una vez (SIN TRY-EXCEPT)
     # Si hay un error de carga, el programa se detendrá aquí, como espera el profesor.
-    spritesheet = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha()
+    spritesheet_icons = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha() # Renombrado para evitar confusión
 
     # Definir el rectángulo del corazón lleno en la spritesheet (x, y, ancho, alto)
     HEART_SPRITE_RECT_SOURCE = pygame.Rect(52, 0, 9, 9) 
 
     # Extraer el corazón lleno
-    heart_surface_local = spritesheet.subsurface(HEART_SPRITE_RECT_SOURCE)
+    heart_surface_local = spritesheet_icons.subsurface(HEART_SPRITE_RECT_SOURCE) # Usar spritesheet_icons
     
     # Escalar el corazón para que sea más visible
     SCALE_SIZE = (30, 30) # Tamaño deseado para los corazones en pantalla
@@ -199,9 +197,9 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
     # Listas para guardar enemigos y disparos
     enemigos = []
     player_bullets = []
+    powerups = [] # Lista para los power-ups
 
     frames_desde_ultima_generacion_enemigo = 0 # Contador para la generación de enemigos
-    powerups = []
     frames_para_nuevo_powerup = 0
     POWERUP_INTERVALO_FRAMES = 600  # cada 10 segundos (60 FPS * 10)
 
@@ -230,80 +228,73 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
         mover_jugador(player, keys, ALTO_PANTALLA)
         actualizar_dash_jugador(player) # Actualizar el temporizador del dash
 
+        # --- Generación de Power-ups ---
         frames_para_nuevo_powerup += 1
         if frames_para_nuevo_powerup >= POWERUP_INTERVALO_FRAMES:
             powerups.append(crear_powerup(ANCHO_PANTALLA, ALTO_PANTALLA))
             frames_para_nuevo_powerup = 0
+        
         # --- Generación de Enemigos ---
         frames_desde_ultima_generacion_enemigo += 1
         if frames_desde_ultima_generacion_enemigo >= COOLDOWN_GENERACION_ENEMIGO_FRAMES:
             enemigos.append(generar_enemigo(ANCHO_PANTALLA, ALTO_PANTALLA))
             frames_desde_ultima_generacion_enemigo = 0 # Reiniciar el contador
 
-        # --- Movimiento de Enemigos y Disparos ---
-        # Ahora pasamos player_data a mover_enemigos para la lógica kamikaze
+        # --- Movimiento de Entidades ---
         mover_enemigos(enemigos, player)
         mover_disparos(player_bullets)
-        mover_powerups(powerups)
-        game_over = manejar_colisiones(player, enemigos, player_bullets)
-        if game_over:
-            running = False
-
-        frames_para_nuevo_powerup += 1
-        if frames_para_nuevo_powerup >= POWERUP_INTERVALO_FRAMES:
-            powerups.append(crear_powerup(ANCHO_PANTALLA, ALTO_PANTALLA))
-            frames_para_nuevo_powerup = 0
-
-# Revisar si el jugador recoge algún powerup
-        recoger_powerups(powerups, player)
-
-
-# --- Colisiones ---
-        game_over = manejar_colisiones(player, enemigos, player_bullets)
+        mover_powerups(powerups) # Mover los power-ups
 
         # --- Colisiones ---
-        # La función de colisiones también elimina los objetos impactados y actualiza puntos/vidas
+        # Manejar colisiones entre jugador/enemigos/disparos
         game_over = manejar_colisiones(player, enemigos, player_bullets)
         if game_over:
             running = False # Si el jugador pierde todas las vidas, terminar el juego
 
+        # Manejar colisiones entre jugador y power-ups
+        recoger_powerups(player, powerups, VIDAS_MAXIMAS) # Pasar VIDAS_MAXIMAS
+
 
         # --- Eliminar elementos fuera de pantalla ---
-        # Ahora pasamos ANCHO_PANTALLA para la limpieza horizontal
-        limpiar_entidades_fuera_pantalla(enemigos, player_bullets, ANCHO_PANTALLA)
-        powerups = [p for p in powerups if p['activo'] and p['rect'].right > 0]
+        # Ahora pasamos la lista de power-ups también
+        limpiar_entidades_fuera_pantalla(enemigos, player_bullets, powerups, ANCHO_PANTALLA)
+
 
         # --- Dibujar ---
         pantalla.blit(fondo_surface, (0, 0))
 
-        dibujar_jugador(pantalla, player, player_image, AZUL, BLANCO) # Dibujar el jugador
+        # Ahora pasamos la spritesheet del jugador a dibujar_jugador
+        dibujar_jugador(pantalla, player, player_spritesheet, AZUL, BLANCO) 
         # Ahora pasamos el diccionario de spritesheets de zombies a dibujar_enemigos
         dibujar_enemigos(pantalla, enemigos, zombie_spritesheets) 
         dibujar_disparos(pantalla, player_bullets) # Dibujar todos los disparos del jugador
-        dibujar_powerups(pantalla, powerups, powerup_imagenes)
+        dibujar_powerups(pantalla, powerups, powerup_imagenes) # Dibujar los power-ups
 
         # Dibujar UI (vidas y puntaje)
         # Ajustar posición del puntaje para el layout horizontal
-        draw_text(pantalla, f"Puntaje: {player['puntos']}", 15, 20, 24, BLANCO, "left")
-        dibujar_vidas_corazones(pantalla, player['vidas'], heart_surface_local, COLOR_CORAZON_PERDIDO)
-
-
+        draw_text(pantalla, f"Puntaje: {player['puntos']}\n", 15, 20, 24, BLANCO, "left") # Agregué un salto de línea para separar del dash CD
+        # Reemplazar el texto de vidas con los corazones (posición ajustada en dibujar_vidas_corazones)
+        dibujar_vidas_corazones(pantalla, player['vidas'], VIDAS_MAXIMAS, heart_surface_local, COLOR_CORAZON_PERDIDO) # Pasar VIDAS_MAXIMAS
+        
+        # Mostrar el estado del dash cooldown (ajustar posición para el layout horizontal)
         if player['dash_cooldown_timer'] > 0:
             tiempo_restante_dash = math.ceil(player['dash_cooldown_timer'] / fps)
             draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 110, 20, 24, ROJO, "left")
         elif not player['en_dash']:
             draw_text(pantalla, "Dash Listo", ANCHO_PANTALLA - 110, 20, 24, VERDE, "left")
 
-        dibujar_powerups(pantalla, powerups, powerup_imagenes)
+        # Se eliminó la duplicación de dibujar_powerups y la list comprehension aquí.
         
         pygame.display.flip() # Actualizar toda la pantalla
-        powerups = [p for p in powerups if p['activo']]
         
-        pygame.display.flip()
         reloj.tick(fps) # Controlar los FPS del juego
 
     #Lectura de archivo config temporal
-    with open("config.json", "r", encoding="utf-8") as file:
+    # Esta parte del código se ejecuta DESPUÉS de que el bucle del juego termina.
+    # Si show_game_over ya maneja la lectura de config, esta línea puede ser redundante.
+    # Si config.json no existe o hay un error, esto podría causar un problema si no se maneja.
+    # Considerando la restricción de NO usar try-except, asegúrate de que config.json siempre esté presente.
+    with open(os.path.join(BASE_DIR, "config.json"), "r", encoding="utf-8") as file: # Usar os.path.join para la ruta
         config = json.load(file)
 
     puntos, nombre = show_game_over(pantalla, config["screen"], config["font_size"], config["colors"], player)
