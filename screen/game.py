@@ -102,7 +102,6 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list, sound_pe
         if detectar_colision_rect(player_data['rect'], enemy['rect']):
             player_data['vidas'] -= 1
             player_impact_sound.play()
-<<<<<<< HEAD
             sound_perder_corazon.play()
             del enemigos_list[i]
             print(f"[DEBUG] Vidas restantes: {player_data['vidas']}")
@@ -110,12 +109,6 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list, sound_pe
                 print("[DEBUG] Jugador sin vidas. Fin del juego.")
                 return True
         i -= 1
-=======
-            del enemigos_list[i_enemy]
-            if player_data['vidas'] <= 0:
-                return True # Retorna True para indicar Game Over
-        i_enemy -= 1
->>>>>>> 5e271098d3a4729a1b0327948bdf890340073621
 
     return False
 
@@ -148,8 +141,8 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
     fondo_surface = pygame.transform.scale(fondo_surface, (ANCHO_PANTALLA, ALTO_PANTALLA))
 
     pygame.mixer.music.load("assets\\sounds\\horror-258261.mp3")
-    pygame.mixer.music.set_volume(0.5)
-    pygame.mixer.music.play(-1)
+    pygame.mixer.music.set_volume(0.05)
+    pygame.mixer.music.play(-3)
 
     # Cargar la spritesheet del jugador
     player_spritesheet = pygame.image.load(PLAYER_SPRITESHEET_PATH).convert_alpha()
