@@ -4,9 +4,16 @@
         "height": 600
     },
     "colors": {
+        "black": [0, 0, 0],
+        "white": [255, 255, 255],
         "green": [0, 255, 0],
         "grey": [50, 50, 50, 150],
         "orange": [228, 142, 0]
+    },
+    "font_size": {
+        "large": 74,
+        "medium": 50,
+        "small": 36
     },
     "player_health": 3,
     "player_speed": 5,
