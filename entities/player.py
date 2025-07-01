@@ -12,8 +12,8 @@ DASH_VELOCIDAD_MULTIPLIER = 2.5 # Multiplicador de velocidad durante el dash
 
 # --- Constantes de Animación para el Jugador ---
 # Asegúrate de que estos valores coincidan con tu spritesheet 'prota1.PNG'
-PLAYER_FRAME_WIDTH = 32 # Ancho de un solo frame en la spritesheet (sugerido por tus imágenes)
-PLAYER_FRAME_HEIGHT = 32 # Alto de un solo frame en la spritesheet (sugerido por tus imágenes)
+PLAYER_FRAME_WIDTH = 40 # Ancho de un solo frame en la spritesheet (sugerido por tus imágenes)
+PLAYER_FRAME_HEIGHT = 40 # Alto de un solo frame en la spritesheet (sugerido por tus imágenes)
 PLAYER_TOTAL_FRAMES_PER_ROW = 3 # Número total de frames en una fila de animación (parece 3 para caminata)
 PLAYER_ANIMATION_SPEED_FPS = 5 # Cuántos frames del juego antes de cambiar al siguiente frame de animación
 
@@ -147,7 +147,7 @@ def dibujar_jugador(pantalla: pygame.Surface, player_data: dict, player_spritesh
             # 2. Avanzar al siguiente frame
             player_data['current_frame'] = (player_data['current_frame'] + 1) % PLAYER_TOTAL_FRAMES_PER_ROW
     elif player_data['direction'] == 'idle':
-        frame_y = PLAYER_ANIM_ROW_IDLE * PLAYER_FRAME_HEIGHT
+        frame_y = 85
         player_data['current_frame'] = 0 # Fija el frame en 0 para la animación estática de idle
         player_data['animation_timer'] = 0 # Reinicia el temporizador para que no afecte al volver a moverse
 
