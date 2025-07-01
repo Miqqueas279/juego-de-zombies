@@ -54,14 +54,15 @@ def disparar_jugador(player_data: dict, current_time: int) -> dict | None:
     Crea un nuevo disparo si el cooldown lo permite.
     Los disparos salen del centro derecho del jugador y se mueven horizontalmente.
     """
+    bullet_image = pygame.image.load("assets/image/bullet.png").convert_alpha()
+
     if current_time - player_data['ultima_vez_disparo'] > player_data['cooldown_disparo']:
         player_data['ultima_vez_disparo'] = current_time
-        bullet_ancho = 10
-        bullet_alto = 5
         # El disparo sale del lado derecho del jugador
         return {
-            'rect': pygame.Rect(player_data['rect'].right, player_data['rect'].centery - bullet_alto // 2, bullet_ancho, bullet_alto),
-            'velocidad': VELOCIDAD_DISPARO_JUGADOR
+            'rect': bullet_image.get_rect(midleft=(player_data['rect'].right, player_data['rect'].centery)),
+            'velocidad': VELOCIDAD_DISPARO_JUGADOR,
+            'imagen': bullet_image
         }
     return None
 
@@ -102,9 +103,9 @@ def dibujar_jugador(pantalla: pygame.Surface, player_data: dict, player_image: p
     if player_data['en_dash']:
         pygame.draw.rect(pantalla, BLANCO, player_data['rect'].inflate(10, 10), 2, border_radius=5)
 
-def dibujar_disparos(pantalla: pygame.Surface, disparos_list: list) -> None:
+def dibujar_disparos(screen: pygame.Surface, disparos_list: list) -> None:
     """
     Dibuja todos los disparos del jugador en la pantalla.
     """
     for disparo in disparos_list:
-        pygame.draw.rect(pantalla, GREEN, disparo['rect'], border_radius=2) # Disparos verdes
+        screen.blit(disparo['imagen'], disparo['rect'])
