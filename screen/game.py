@@ -68,55 +68,50 @@ def limpiar_entidades_fuera_pantalla(enemigos_list: list, disparos_list: list, p
     powerups_list[:] = temp_powerups_list # Esto modifica la lista original en su lugar
 
 
-def manejar_colisiones(player_data: dict, enemigos_list: list, player_bullets_list: list) -> bool:
+def manejar_colisiones(player_data, enemigos_list, player_bullets_list, sound_perder_corazon):
     """
-    Maneja todas las colisiones entre entidades y actualiza vidas/puntos.
-    Retorna True si el juego termina (vidas del jugador <= 0), False en caso contrario.
+    Detecta colisiones entre jugador, enemigos y balas.
+    Devuelve True si el jugador pierde todas las vidas.
     """
-    game_over = False
-
     player_impact_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "impact.mp3"))
     player_impact_sound.set_volume(0.3)
     enemy_impact_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "enemy_impact.mp3"))
     enemy_impact_sound.set_volume(0.1)
 
-    # Colisión disparo vs enemigo
-    i_bullet = len(player_bullets_list) - 1
-    while i_bullet >= 0:
-        bullet = player_bullets_list[i_bullet]
-        j_enemy = len(enemigos_list) - 1
-        bullet_hit = False
-        while j_enemy >= 0:
-            enemy = enemigos_list[j_enemy]
+    # Colisiones disparos vs enemigos
+    i = len(player_bullets_list) - 1
+    while i >= 0:
+        bullet = player_bullets_list[i]
+        j = len(enemigos_list) - 1
+        while j >= 0:
+            enemy = enemigos_list[j]
             if detectar_colision_rect(bullet['rect'], enemy['rect']):
                 enemy['vida'] -= 1
                 enemy_impact_sound.play()
-                bullet_hit = True
                 if enemy['vida'] <= 0:
                     player_data['puntos'] += enemy['puntos']
-                    del enemigos_list[j_enemy]
+                    del enemigos_list[j]
+                del player_bullets_list[i]
                 break
-            j_enemy -= 1
-        if bullet_hit:
-            del player_bullets_list[i_bullet]
-        i_bullet -= 1
+            j -= 1
+        i -= 1
 
-    # Colisión enemigo vs jugador
-    i_enemy = len(enemigos_list) - 1
-    while i_enemy >= 0:
-        enemy = enemigos_list[i_enemy]
+    # Colisiones enemigos vs jugador
+    i = len(enemigos_list) - 1
+    while i >= 0:
+        enemy = enemigos_list[i]
         if detectar_colision_rect(player_data['rect'], enemy['rect']):
             player_data['vidas'] -= 1
             player_impact_sound.play()
-            del enemigos_list[i_enemy]
-            print(f"[DEBUG] Jugador recibió daño. Vidas restantes: {player_data['vidas']}")
+            sound_perder_corazon.play()
+            del enemigos_list[i]
+            print(f"[DEBUG] Vidas restantes: {player_data['vidas']}")
             if player_data['vidas'] <= 0:
                 print("[DEBUG] Jugador sin vidas. Fin del juego.")
-                return True # Retorna True para indicar Game Over
-        i_enemy -= 1
+                return True
+        i -= 1
 
     return False
-
 
 def dibujar_vidas_corazones(pantalla: pygame.Surface, vidas_actuales: int, vidas_maximas: int, heart_image_surface: pygame.Surface, lost_heart_color: tuple) -> None:
     """
@@ -172,6 +167,13 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
 
 
     shoot_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "player_shoot.mp3"))
+    sound_recoger_corazon = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "recoger corrazon.mp3"))
+    sound_perder_corazon = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "perder corrazon.mp3"))
+    sound_aumentar_velocidad = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "aumentar velocidad.mp3"))
+
+    sound_recoger_corazon.set_volume(0.4)
+    sound_perder_corazon.set_volume(0.4)
+    sound_aumentar_velocidad.set_volume(0.4)
     shoot_sound.set_volume(0.1)
 
     # Cargar y procesar la imagen del corazón una vez (SIN TRY-EXCEPT)
@@ -248,12 +250,21 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
 
         # --- Colisiones ---
         # Manejar colisiones entre jugador/enemigos/disparos
-        game_over = manejar_colisiones(player, enemigos, player_bullets)
+        game_over = manejar_colisiones(player, enemigos, player_bullets, sound_perder_corazon)
         if game_over:
             running = False # Si el jugador pierde todas las vidas, terminar el juego
 
         # Manejar colisiones entre jugador y power-ups
-        recoger_powerups(player, powerups, VIDAS_MAXIMAS) # Pasar VIDAS_MAXIMAS
+        for i in range(len(powerups) - 1, -1, -1):
+            powerup = powerups[i]
+            if player['rect'].colliderect(powerup['rect']):
+                if powerup['tipo'] == 'vida' and player['vidas'] < VIDAS_MAXIMAS:
+                    player['vidas'] += 1
+                    sound_recoger_corazon.play()
+                elif powerup['tipo'] == 'velocidad':
+                    player['velocidad'] += 1
+                    sound_aumentar_velocidad.play()
+                del powerups[i] # Pasar VIDAS_MAXIMAS
 
 
         # --- Eliminar elementos fuera de pantalla ---
