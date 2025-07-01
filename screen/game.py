@@ -1,5 +1,6 @@
 import pygame
 import math
+import json
 import os # Importar os para manejar rutas de archivos
 from entities.powerup import crear_powerup, mover_powerups, dibujar_powerups, recoger_powerups
 
