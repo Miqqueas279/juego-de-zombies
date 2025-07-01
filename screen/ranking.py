@@ -1,35 +1,17 @@
 import pygame
-from utils.score import load_scores # Importamos funciones de utils
-from utils.text import draw_text, get_font
+from utils.list import sort_list
+from utils.text import draw_text
 
 # --- Pantalla de Ranking ---
-def show_ranking(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_titulo, fuente_lista, color_fondo, color_texto, scores):
+def show_ranking(screen: pygame.Surface, screen_size: dict, font_size: dict, colors: dict, scores: list) -> None:
     """
     Muestra el ranking de los mejores puntajes.
     """
-    # Asegurarse de que los puntajes estén ordenados de mayor a menor y limitados a 5
-    # Aquí no usamos list comprehension para sortear o tomar los primeros 5.
-    # Primero copiamos la lista para no modificar la original que viene como argumento
-    scores_a_ordenar = []
-    for s in scores:
-        scores_a_ordenar.append(s)
+    width = screen_size["width"]
+    height = screen_size["height"]
 
-    # Implementar un simple algoritmo de burbuja o similar para ordenar sin usar sorted()
-    # (aunque sorted() es una función built-in y no una list comprehension,
-    # la consigna es estricta con "sin objetos", a veces interpretado como "sin funciones de alto nivel")
-    # Para simplicidad y porque sorted() no es list comprehension:
-    scores_ordenados = sorted(scores_a_ordenar, key=lambda x: x['puntaje'], reverse=True)
-    
-    # Tomar los top 5 sin list comprehension
-    scores_a_mostrar = []
-    count = 0
-    for score in scores_ordenados:
-        if count < 5:
-            scores_a_mostrar.append(score)
-            count += 1
-        else:
-            break
-
+    background_img = pygame.image.load("assets\\image\\background.jpg").convert()
+    background_img = pygame.transform.scale(background_img, (width, height))
 
     running = True
     while running:
@@ -40,23 +22,27 @@ def show_ranking(pantalla, ANCHO_PANTALLA, ALTO_PANTALLA, fuente_titulo, fuente_
                 if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
                     running = False # Volver al menú principal
 
-        pantalla.fill(color_fondo) # Rellenar el fondo
+        screen.blit(background_img, (0, 0))
 
         # Título del Ranking
-        draw_text(pantalla, "Ranking", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 4 - 50, fuente_titulo.get_height(), color_texto, "center")
+        draw_text(screen, "Ranking", width // 2, height // 4 - 50, font_size["large"], colors["orange"], "center")
 
         # Mostrar los puntajes
-        y_offset = ALTO_PANTALLA // 4 + 50
-        if not scores_a_mostrar:
-            draw_text(pantalla, "No hay puntajes aún.", ANCHO_PANTALLA // 2, y_offset, fuente_lista.get_height(), color_texto, "center")
+        if not scores:
+            draw_text(screen, "No hay puntajes aún.", height // 2, height // 3, font_size["medium"], colors["white"], "center")
         else:
-            for i in range(len(scores_a_mostrar)):
-                score = scores_a_mostrar[i]
-                texto = f"{i+1}. {score['nombre']} - {score['puntaje']}"
-                draw_text(pantalla, texto, ANCHO_PANTALLA // 2, y_offset + i * 50, fuente_lista.get_height(), color_texto, "center")
+            draw_scores(screen, width, height // 3, font_size, colors, scores)
 
-        # Instrucción para volver
-        # Usar una fuente pequeña por defecto para esto.
-        draw_text(pantalla, "Presiona ESC o ENTER para volver", ANCHO_PANTALLA // 2, ALTO_PANTALLA - 50, 24, color_texto, "center")
+        draw_text(screen, "Presiona ESC o ENTER para volver", width // 2, height - 50, font_size["small"] - 12, colors["white"], "center")
 
         pygame.display.flip() # Actualizar la pantalla
+
+
+def draw_scores(screen: pygame.Surface, width: int, height: int, font_size: dict, colors: dict, scores: list) -> None:
+    ordered_list_by_score = sort_list(scores, 'puntaje', 5)
+
+    for i in range(len(ordered_list_by_score)):
+        player = ordered_list_by_score[i]
+        text = f"{i+1}. {player['nombre']} - {player['puntaje']}"
+
+        draw_text(screen, text, width // 2, height + i * 50, font_size["medium"], colors["white"], "center")

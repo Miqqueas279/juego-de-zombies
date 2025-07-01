@@ -1,9 +1,11 @@
+import json
 import pygame
 import math
 import os # Importar os para manejar rutas de archivos
 
 from entities.enemy import dibujar_enemigos, generar_enemigo, mover_enemigos, ZOMBIE_FRAME_WIDTH, ZOMBIE_FRAME_HEIGHT # Importar constantes de animación
 from entities.player import actualizar_dash_jugador, dibujar_disparos, dibujar_jugador, disparar_jugador, init_player, mover_disparos, mover_jugador, usar_dash_jugador
+from screen.game_over import show_game_over
 from utils.collision import detectar_colision_rect # Importar funciones auxiliares desde el módulo correcto
 from utils.text import draw_text, get_font
 
@@ -256,30 +258,10 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
 
         reloj.tick(fps) # Controlar los FPS del juego
 
-    # --- Game Over Screen ---
-    # Pedir nombre al jugador después de que el bucle principal del juego termina
-    nombre_ingresado = ""
-    input_activo = True
+    #Lectura de archivo config temporal
+    with open("config.json", "r", encoding="utf-8") as file:
+        config = json.load(file)
 
-    while input_activo:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                return None, None # Si el usuario cierra la ventana durante el ingreso de nombre
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN: # Si presiona ENTER, finaliza el ingreso
-                    input_activo = False
-                elif event.key == pygame.K_BACKSPACE: # Si presiona BACKSPACE, borra el último carácter
-                    nombre_ingresado = nombre_ingresado[:-1]
-                else:
-                    # Añadir el carácter presionado al nombre
-                    nombre_ingresado += event.unicode
+    puntos, nombre = show_game_over(pantalla, config["screen"], config["font_size"], config["colors"], player)
 
-        pantalla.fill(NEGRO) # Fondo negro para la pantalla de Game Over
-        draw_text(pantalla, "GAME OVER", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 - 50, 74, ROJO, "center")
-        draw_text(pantalla, f"Puntaje Final: {player['puntos']}", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 20, 36, BLANCO, "center")
-        draw_text(pantalla, "Ingresa tu nombre:", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 80, 36, BLANCO, "center")
-        # Mostrar el nombre ingresado y un cursor simulado
-        draw_text(pantalla, nombre_ingresado + "|", ANCHO_PANTALLA // 2, ALTO_PANTALLA // 2 + 120, 36, BLANCO, "center")
-        pygame.display.flip()
-
-    return player['puntos'], nombre_ingresado # Devolver el puntaje y el nombre para guardar
+    return puntos, nombre
