@@ -59,11 +59,11 @@ def main():
                 scores.append({"nombre": nombre_jugador, "puntaje": puntaje_final})
                 save_scores(scores)
                 # Mostrar la pantalla de ranking después de guardar el puntaje
-                show_ranking(PANTALLA, config["screen"]["width"], config["screen"]["height"], FUENTE_GRANDE, FUENTE_MEDIA, NEGRO, BLANCO, scores)
+                show_ranking(PANTALLA, config["screen"], config["font_size"], config["colors"], scores)
         elif option == "ranking":
             # Cargar y mostrar el ranking
             scores = load_scores()
-            show_ranking(PANTALLA, config["screen"]["width"], config["screen"]["height"], FUENTE_GRANDE, FUENTE_MEDIA, NEGRO, BLANCO, scores)
+            show_ranking(PANTALLA, config["screen"], config["font_size"], config["colors"], scores)
         elif option == "creditos":
             # Por ahora, un simple mensaje y vuelve al menú.
             print("Mostrar créditos (aún no implementado)")
