@@ -6,9 +6,10 @@ VELOCIDAD_ENEMIGO_BASE = 2
 PROBABILIDAD_BOOSTED = 0.2 # 20% de probabilidad de enemigo con boost
 PROBABILIDAD_KAMIKAZE = 0.1 # 10% de probabilidad de kamikaze
 # Multiplicadores de velocidad para enemigos especiales
-FACTOR_VELOCIDAD_BOOSTED = 1.5 # Los enemigos con boost son 50% más rápidos
+FACTOR_VELOCIDAD_BOOSTED =  0.5 # Los enemigos con boost son 50% más rápidos
 FACTOR_VELOCIDAD_KAMIKAZE = 3.0 # Los kamikazes son 200% más rápidos
 VIDA_KAMIKAZE = 1 # Los kamikazes tienen poca vida
+VIDA_BOOSTED = 3
 # Puntos que otorgan los enemigos
 PUNTAJE_NORMAL = 10
 PUNTAJE_BOOSTED = 15
@@ -37,7 +38,7 @@ def generar_enemigo(ANCHO_PANTALLA: int, ALTO_PANTALLA: int) -> dict:
 
     # Propiedades base
     velocidad_enemigo = VELOCIDAD_ENEMIGO_BASE
-    vida_enemigo = 1
+    vida_enemigo = 2
     puntaje_enemigo = PUNTAJE_NORMAL
     tipo_enemigo = "normal"
 
@@ -52,6 +53,7 @@ def generar_enemigo(ANCHO_PANTALLA: int, ALTO_PANTALLA: int) -> dict:
         tipo_enemigo = "boosted"
         velocidad_enemigo = VELOCIDAD_ENEMIGO_BASE * FACTOR_VELOCIDAD_BOOSTED
         puntaje_enemigo = PUNTAJE_BOOSTED
+        vida_enemigo = VIDA_BOOSTED
     
     # La velocidad es negativa para que se muevan hacia la izquierda
     return {
