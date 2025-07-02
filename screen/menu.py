@@ -9,8 +9,8 @@ def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pyga
     """
 
     pygame.mixer.music.load("assets\\sounds\\Infested City.ogg")
-    pygame.mixer.music.set_volume(0.5)
-    pygame.mixer.music.play(-1)
+    pygame.mixer.music.set_volume(0.05)
+    pygame.mixer.music.play(-3)
 
 
     title_img = pygame.image.load("assets\\image\\title.png").convert_alpha()

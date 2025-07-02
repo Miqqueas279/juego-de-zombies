@@ -141,8 +141,8 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
     fondo_surface = pygame.transform.scale(fondo_surface, (ANCHO_PANTALLA, ALTO_PANTALLA))
 
     pygame.mixer.music.load("assets\\sounds\\horror-258261.mp3")
-    pygame.mixer.music.set_volume(0.5)
-    pygame.mixer.music.play(-1)
+    pygame.mixer.music.set_volume(0.05)
+    pygame.mixer.music.play(-3)
 
     # Cargar la spritesheet del jugador
     player_spritesheet = pygame.image.load(PLAYER_SPRITESHEET_PATH).convert_alpha()

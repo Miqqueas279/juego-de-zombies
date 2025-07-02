@@ -5,7 +5,7 @@ from utils.text import draw_text
 def show_credits(screen: pygame.Surface, screen_size: dict, font_size: dict, colors: dict):
 
     pygame.mixer.music.load("assets\\sounds\\credits_music.mp3")
-    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.set_volume(0.05)
     pygame.mixer.music.play(-1)    
 
     background_img = pygame.image.load("assets\\image\\credits_background.jpg").convert()
