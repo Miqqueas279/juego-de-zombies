@@ -55,9 +55,3 @@ def save_scores(scores):
 
     with open(SCORES_FILE, 'w') as f:
         json.dump(top_5_scores, f, indent=4) # Guardar como JSON con formato legible
-
-def detectar_colision_rect(rect1, rect2):
-    """
-    Detecta si dos objetos pygame.Rect están colisionando.
-    """
-    return rect1.colliderect(rect2)
