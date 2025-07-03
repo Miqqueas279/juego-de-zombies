@@ -6,6 +6,7 @@ from screen.game import main_game_loop
 from screen.menu import main_menu
 from screen.ranking import show_ranking
 from utils.score import load_scores, save_scores
+from utils.soundtrack import stop_music
 
 # --- Configuración Inicial de Pygame ---
 pygame.init()
@@ -66,6 +67,7 @@ def main():
             scores = load_scores()
             show_ranking(PANTALLA, config["screen"], config["font_size"], config["colors"], scores)
         elif option == "creditos":
+            stop_music()
             show_credits(PANTALLA, config["screen"], config["font_size"], config["colors"])
         elif option == "salir":
             pygame.quit()

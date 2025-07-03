@@ -8,6 +8,7 @@ from entities.enemy import dibujar_enemigos, generar_enemigo, mover_enemigos, ZO
 from entities.player import actualizar_dash_jugador, dibujar_disparos, dibujar_jugador, disparar_jugador, init_player, mover_disparos, mover_jugador, usar_dash_jugador, PLAYER_FRAME_WIDTH, PLAYER_FRAME_HEIGHT, PLAYER_TOTAL_FRAMES_PER_ROW # Importar constantes de animación del jugador
 from screen.game_over import show_game_over # Asumo que esta función existe en screen/game_over.py
 from utils.collision import detectar_colision_rect # Importar funciones auxiliares desde el módulo correcto
+from utils.soundtrack import play_music, load_sound
 from utils.text import draw_text, get_font
 
 # --- Constantes del Juego ---
@@ -67,16 +68,11 @@ def limpiar_entidades_fuera_pantalla(enemigos_list: list, disparos_list: list, p
     powerups_list[:] = temp_powerups_list # Esto modifica la lista original en su lugar
 
 
-def manejar_colisiones(player_data, enemigos_list, player_bullets_list, sound_perder_corazon):
+def manejar_colisiones(player_data, enemigos_list, player_bullets_list, lost_health_sound: pygame.mixer.Sound | None, player_impact_sound: pygame.mixer.Sound | None, enemy_impact_sound: pygame.mixer.Sound | None):
     """
     Detecta colisiones entre jugador, enemigos y balas.
     Devuelve True si el jugador pierde todas las vidas.
     """
-    player_impact_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "impact.mp3"))
-    player_impact_sound.set_volume(0.3)
-    enemy_impact_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "enemy_impact.mp3"))
-    enemy_impact_sound.set_volume(0.1)
-
     # Colisiones disparos vs enemigos
     i = len(player_bullets_list) - 1
     while i >= 0:
@@ -86,7 +82,8 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list, sound_pe
             enemy = enemigos_list[j]
             if detectar_colision_rect(bullet['rect'], enemy['rect']):
                 enemy['vida'] -= 1
-                enemy_impact_sound.play()
+                if enemy_impact_sound:
+                    enemy_impact_sound.play()
                 if enemy['vida'] <= 0:
                     player_data['puntos'] += enemy['puntos']
                     del enemigos_list[j]
@@ -101,8 +98,10 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list, sound_pe
         enemy = enemigos_list[i]
         if detectar_colision_rect(player_data['rect'], enemy['rect']):
             player_data['vidas'] -= 1
-            player_impact_sound.play()
-            sound_perder_corazon.play()
+            if player_impact_sound:
+                player_impact_sound.play()
+            if lost_health_sound:
+                lost_health_sound.play()
             del enemigos_list[i]
             print(f"[DEBUG] Vidas restantes: {player_data['vidas']}")
             if player_data['vidas'] <= 0:
@@ -131,7 +130,7 @@ def dibujar_vidas_corazones(pantalla: pygame.Surface, vidas_actuales: int, vidas
 
 
 # --- Bucle Principal del Juego (main_game_loop) ---
-def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA: int, fuente_pequena: pygame.font.Font, NEGRO: tuple, BLANCO: tuple, ROJO: tuple, VERDE: tuple, AZUL: tuple) -> tuple | None:
+def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA: int, fuente_pequena: pygame.font.Font, NEGRO: tuple, BLANCO: tuple, ROJO: tuple, VERDE: tuple, AZUL: tuple) -> tuple:
     """
     Gestiona la lógica principal de la partida.
     Retorna el puntaje final y el nombre del jugador si el juego termina.
@@ -140,9 +139,7 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
     fondo_surface = pygame.image.load(FONDO_PATH).convert()
     fondo_surface = pygame.transform.scale(fondo_surface, (ANCHO_PANTALLA, ALTO_PANTALLA))
 
-    pygame.mixer.music.load("assets\\sounds\\horror-258261.mp3")
-    pygame.mixer.music.set_volume(0.05)
-    pygame.mixer.music.play(-3)
+    play_music("game_music.mp3", 0.05)
 
     # Cargar la spritesheet del jugador
     player_spritesheet = pygame.image.load(PLAYER_SPRITESHEET_PATH).convert_alpha()
@@ -164,17 +161,12 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
         zombie_spritesheets[tipo] = pygame.transform.scale(zombie_spritesheets[tipo], 
                                                            (ZOMBIE_FRAME_WIDTH * 3, ZOMBIE_FRAME_HEIGHT * 4)) # Asumiendo 3x4 frames por spritesheet
         
-
-
-    shoot_sound = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "player_shoot.mp3"))
-    sound_recoger_corazon = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "recoger corrazon.mp3"))
-    sound_perder_corazon = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "perder corrazon.mp3"))
-    sound_aumentar_velocidad = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "sounds", "aumentar velocidad.mp3"))
-
-    sound_recoger_corazon.set_volume(0.4)
-    sound_perder_corazon.set_volume(0.4)
-    sound_aumentar_velocidad.set_volume(0.4)
-    shoot_sound.set_volume(0.1)
+    shoot_sound = load_sound("player_shoot.mp3", 0.1)
+    recover_health_sound = load_sound("recover_health.mp3", 0.4)
+    lost_health_sound = load_sound("lost_health.mp3", 0.4)
+    increase_speed_sound = load_sound("increase_speed.mp3", 0.4)
+    player_impact_sound = load_sound("player_impact.mp3", 0.3)
+    enemy_impact_sound = load_sound("enemy_impact.mp3", 0.1)
 
     # Cargar y procesar la imagen del corazón una vez 
     spritesheet_icons = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha() 
@@ -220,7 +212,8 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
                     # Intentar disparar y añadir el nuevo disparo a la lista
                     nuevo_disparo = disparar_jugador(player, current_frames)
                     if nuevo_disparo:
-                        shoot_sound.play()
+                        if shoot_sound:
+                            shoot_sound.play()
                         player_bullets.append(nuevo_disparo)
                 if event.key == pygame.K_z: # Tecla para el dash
                     usar_dash_jugador(player)
@@ -249,7 +242,7 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
 
         # --- Colisiones ---
         # Manejar colisiones entre jugador/enemigos/disparos
-        game_over = manejar_colisiones(player, enemigos, player_bullets, sound_perder_corazon)
+        game_over = manejar_colisiones(player, enemigos, player_bullets, lost_health_sound, player_impact_sound, enemy_impact_sound)
         if game_over:
             running = False # Si el jugador pierde todas las vidas, terminar el juego
 
@@ -259,10 +252,12 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
             if player['rect'].colliderect(powerup['rect']):
                 if powerup['tipo'] == 'vida' and player['vidas'] < VIDAS_MAXIMAS:
                     player['vidas'] += 1
-                    sound_recoger_corazon.play()
+                    if recover_health_sound:
+                        recover_health_sound.play()
                 elif powerup['tipo'] == 'velocidad':
                     player['velocidad'] += 1
-                    sound_aumentar_velocidad.play()
+                    if increase_speed_sound:
+                        increase_speed_sound.play()
                 del powerups[i] # Pasar VIDAS_MAXIMAS
 
 

@@ -1,12 +1,10 @@
 import pygame
-
+from utils.soundtrack import play_music, stop_music
 from utils.text import draw_text
 
 def show_credits(screen: pygame.Surface, screen_size: dict, font_size: dict, colors: dict):
 
-    pygame.mixer.music.load("assets\\sounds\\credits_music.mp3")
-    pygame.mixer.music.set_volume(0.05)
-    pygame.mixer.music.play(-1)    
+    play_music("credits_music.mp3", 0.05)
 
     background_img = pygame.image.load("assets\\image\\credits_background.jpg").convert()
     background_img = pygame.transform.scale(background_img, (screen_size["width"], screen_size["height"]))
@@ -15,17 +13,19 @@ def show_credits(screen: pygame.Surface, screen_size: dict, font_size: dict, col
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return None, None # Si el usuario cierra la ventana durante el ingreso de nombre
+                running = False
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN: # Si presiona ENTER, finaliza el ingreso
+                if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
                     running = False
 
         screen.blit(background_img, (0, 0))
 
         draw_text(screen, "Créditos", screen_size["width"] // 2, screen_size["height"] // 2 - 200, font_size["large"], colors["orange"], "center")
+        
         draw_text(screen, "Este juego fue realizado para la materia Programación 1,", screen_size["width"] // 2, screen_size["height"] // 2 - 120, font_size["small"] - 6, colors["white"], "center")
         draw_text(screen, "división 316-1 de la Universidad Tecnológica Nacional", screen_size["width"] // 2, screen_size["height"] // 2 - 80, font_size["small"] - 6, colors["white"], "center")
         draw_text(screen, "Nombre del equipo: Cielo Letal", screen_size["width"] // 2, screen_size["height"] // 2 - 10, font_size["small"] - 6, colors["white"], "center")
+        
         draw_text(screen, "Integrantes", screen_size["width"] // 2, screen_size["height"] // 2 + 40, font_size["small"] - 6, colors["orange"], "center")
         draw_text(screen, "Ezequiel Martín Quispe", screen_size["width"] // 2, screen_size["height"] // 2 + 80, font_size["small"] - 6, colors["white"], "center")
         draw_text(screen, "Federico Ezequiel Piretro Berengo", screen_size["width"] // 2, screen_size["height"] // 2 + 120, font_size["small"] - 6, colors["white"], "center")
@@ -34,3 +34,5 @@ def show_credits(screen: pygame.Surface, screen_size: dict, font_size: dict, col
         draw_text(screen, "Presiona ESC o ENTER para volver", screen_size["width"] // 2, screen_size["height"] - 50, font_size["small"] - 12, colors["white"], "center")
         
         pygame.display.flip()
+
+    stop_music()

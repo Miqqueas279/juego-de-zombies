@@ -1,5 +1,6 @@
 import pygame
 from utils.button import create_button, draw_button, is_button_clicked
+from utils.soundtrack import load_sound, play_music
 
 # --- Menú Principal ---
 def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pygame.font.Font, button_color: tuple, button_hover: tuple) -> str:
@@ -7,11 +8,7 @@ def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pyga
     Muestra el menú principal y maneja la interacción con los botones.
     Retorna la acción seleccionada ('jugar', 'ranking', 'creditos', 'salir').
     """
-
-    pygame.mixer.music.load("assets\\sounds\\Infested City.ogg")
-    pygame.mixer.music.set_volume(0.05)
-    pygame.mixer.music.play(-3)
-
+    play_music("menu_music.ogg", 0.05)
 
     title_img = pygame.image.load("assets\\image\\title.png").convert_alpha()
     title_img = pygame.transform.scale(title_img, (400, 100))
@@ -22,10 +19,8 @@ def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pyga
     icon_img = pygame.image.load("assets\\image\\weapon.png").convert_alpha()
     icon_img = pygame.transform.scale(icon_img, (30, 30))
 
-    sound_click = pygame.mixer.Sound("assets\\sounds\\shoot.mp3")
-    sound_hover = pygame.mixer.Sound("assets\\sounds\\selection.mp3")
-    sound_click.set_volume(0.1)   # 10% del volumen
-    sound_hover.set_volume(0.1)   # 10% del volumen
+    sound_click = load_sound("shoot.mp3", 0.1)
+    sound_hover = load_sound("selection.mp3", 0.1)
     buttons_hover_prev = set()
 
     # Lista de diccionarios de botones
