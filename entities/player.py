@@ -1,9 +1,8 @@
 import pygame
 
-GREEN = (0, 255, 0)
-VIDAS_INICIALES = 3
-VELOCIDAD_JUGADOR_BASE = 5
-VELOCIDAD_DISPARO_JUGADOR = 10
+BASE_HEALTH = 3
+BASE_SPEED_PLAYER = 5
+BASE_SPEED_SHOOT = 10
 
 # Constantes del Dash del Jugador
 DASH_COOLDOWN_FRAMES = 180 # 3 segundos a 60 FPS
@@ -11,32 +10,31 @@ DASH_DURATION_FRAMES = 15  # Duración del dash en frames
 DASH_VELOCIDAD_MULTIPLIER = 2.5 # Multiplicador de velocidad durante el dash
 
 # --- Constantes de Animación para el Jugador ---
-# Asegúrate de que estos valores coincidan con tu spritesheet 'prota1.PNG'
+# Asegúrate de que estos valores coincidan con tu spritesheet 'player.png'
 PLAYER_FRAME_WIDTH = 40 # Ancho de un solo frame en la spritesheet (sugerido por tus imágenes)
 PLAYER_FRAME_HEIGHT = 40 # Alto de un solo frame en la spritesheet (sugerido por tus imágenes)
 PLAYER_TOTAL_FRAMES_PER_ROW = 3 # Número total de frames en una fila de animación (parece 3 para caminata)
 PLAYER_ANIMATION_SPEED_FPS = 5 # Cuántos frames del juego antes de cambiar al siguiente frame de animación
 
-# Filas de la spritesheet para cada dirección (basado en prota1.PNG)
+# Filas de la spritesheet para cada dirección (basado en player.png)
 # Asumiendo que la primera fila es índice 0, la segunda 1, etc.
 PLAYER_ANIM_ROW_DOWN = 0 # Primera fila para movimiento hacia abajo
 PLAYER_ANIM_ROW_UP = 3 # Última fila para movimiento hacia arriba (índice 3 si hay 4 filas)
 PLAYER_ANIM_ROW_IDLE = 2 # Fila para inactividad, mirando hacia la derecha (índice 2)
 
-
-def init_player(ANCHO_PANTALLA: int, ALTO_PANTALLA: int) -> dict:
+def init_player(scree_height: int) -> dict:
     """
     Inicializa los datos del jugador como un diccionario para un juego horizontal.
     El jugador se posiciona en el lado izquierdo, centrado verticalmente.
     Ahora incluye propiedades para la animación.
     """
-    player_ancho = PLAYER_FRAME_WIDTH # Usamos el tamaño del frame para el rectángulo de colisión
-    player_alto = PLAYER_FRAME_HEIGHT
+    player_width = PLAYER_FRAME_WIDTH # Usamos el tamaño del frame para el rectángulo de colisión
+    player_height = PLAYER_FRAME_HEIGHT
 
     return {
-        'rect': pygame.Rect(50, ALTO_PANTALLA // 2 - player_alto // 2, player_ancho, player_alto), # Posición inicial en la izquierda
-        'velocidad': VELOCIDAD_JUGADOR_BASE,
-        'vidas': VIDAS_INICIALES,
+        'rect': pygame.Rect(50, scree_height // 2 - player_height // 2, player_width, player_height), # Posición inicial en la izquierda
+        'velocidad': BASE_SPEED_PLAYER,
+        'vidas': BASE_HEALTH,
         'puntos': 0,
         'ultima_vez_disparo': 0, # Tiempo en frames desde el último disparo
         'cooldown_disparo': 20, # Frames a esperar entre disparos
@@ -48,22 +46,22 @@ def init_player(ANCHO_PANTALLA: int, ALTO_PANTALLA: int) -> dict:
         'direction': 'idle' # Dirección inicial para la animación: 'idle' (mirando al costado)
     }
 
-def mover_jugador(player_data: dict, keys: pygame.key.ScancodeWrapper, ALTO_PANTALLA: int) -> None:
+def move_player(player_data: dict, keys: pygame.key.ScancodeWrapper, screen_height: int) -> None:
     """
     Mueve el jugador verticalmente en la pantalla, restringido a los límites verticales.
     Actualiza la dirección para la animación.
     """
-    velocidad_actual = player_data['velocidad']
+    actual_speed = player_data['velocidad']
     if player_data['en_dash']:
-        velocidad_actual *= DASH_VELOCIDAD_MULTIPLIER
+        actual_speed *= DASH_VELOCIDAD_MULTIPLIER
 
     moving = False
     if keys[pygame.K_UP]:
-        player_data['rect'].y -= velocidad_actual
+        player_data['rect'].y -= actual_speed
         player_data['direction'] = 'up' # Establecer dirección para animación
         moving = True
     if keys[pygame.K_DOWN]:
-        player_data['rect'].y += velocidad_actual
+        player_data['rect'].y += actual_speed
         player_data['direction'] = 'down' # Establecer dirección para animación
         moving = True
 
@@ -74,10 +72,10 @@ def mover_jugador(player_data: dict, keys: pygame.key.ScancodeWrapper, ALTO_PANT
     # Restringir al jugador a los límites de la pantalla verticalmente
     if player_data['rect'].top < 0:
         player_data['rect'].top = 0
-    if player_data['rect'].bottom > ALTO_PANTALLA:
-        player_data['rect'].bottom = ALTO_PANTALLA
+    if player_data['rect'].bottom > screen_height:
+        player_data['rect'].bottom = screen_height
 
-def disparar_jugador(player_data: dict, current_time: int, bullet_image: pygame.Surface) -> dict | None:
+def shoot_player(player_data: dict, current_time: int, bullet_image: pygame.Surface) -> dict | None:
     """
     Crea un nuevo disparo si el cooldown lo permite.
     Los disparos salen del centro derecho del jugador y se mueven horizontalmente.
@@ -87,20 +85,20 @@ def disparar_jugador(player_data: dict, current_time: int, bullet_image: pygame.
         # El disparo sale del lado derecho del jugador
         return {
             'rect': bullet_image.get_rect(midleft=(player_data['rect'].right, player_data['rect'].centery)),
-            'velocidad': VELOCIDAD_DISPARO_JUGADOR,
+            'velocidad': BASE_SPEED_SHOOT,
             'imagen': bullet_image
         }
     
     return None
 
-def mover_disparos(disparos_list: list) -> None:
+def move_shoots(shoots_list: list) -> None:
     """
     Mueve todos los disparos del jugador horizontalmente hacia la derecha.
     """
-    for disparo in disparos_list:
-        disparo['rect'].x += disparo['velocidad'] # Mover horizontalmente
+    for shoot in shoots_list:
+        shoot['rect'].x += shoot['velocidad'] # Mover horizontalmente
 
-def usar_dash_jugador(player_data: dict) -> None:
+def use_player_dash(player_data: dict) -> None:
     """
     Activa el dash del jugador si no está en cooldown.
     """
@@ -109,7 +107,7 @@ def usar_dash_jugador(player_data: dict) -> None:
         player_data['dash_timer'] = DASH_DURATION_FRAMES
         player_data['dash_cooldown_timer'] = DASH_COOLDOWN_FRAMES
 
-def actualizar_dash_jugador(player_data: dict) -> None:
+def update_player_dash(player_data: dict) -> None:
     """
     Actualiza el temporizador del dash y el cooldown.
     """
@@ -121,7 +119,7 @@ def actualizar_dash_jugador(player_data: dict) -> None:
     if player_data['dash_cooldown_timer'] > 0:
         player_data['dash_cooldown_timer'] -= 1
 
-def dibujar_jugador(pantalla: pygame.Surface, player_data: dict, player_spritesheet: pygame.Surface, AZUL: tuple, BLANCO: tuple) -> None:
+def draw_player(screen: pygame.Surface, player_data: dict, player_spritesheet: pygame.Surface, color_white: tuple) -> None:
     """
     Dibuja el jugador en la pantalla, usando su animación según la dirección.
     Cuando está inactivo ('idle'), muestra un frame estático.
@@ -162,14 +160,14 @@ def dibujar_jugador(pantalla: pygame.Surface, player_data: dict, player_spritesh
     scaled_frame_image = pygame.transform.scale(current_frame_image, (player_data['rect'].width, player_data['rect'].height))
 
     # 6. Dibujar el frame actual en la posición del jugador
-    pantalla.blit(scaled_frame_image, player_data['rect'])
+    screen.blit(scaled_frame_image, player_data['rect'])
 
     if player_data['en_dash']:
-        pygame.draw.rect(pantalla, BLANCO, player_data['rect'].inflate(10, 10), 2, border_radius=5)
+        pygame.draw.rect(screen, color_white, player_data['rect'].inflate(10, 10), 2, border_radius=5)
 
-def dibujar_disparos(screen: pygame.Surface, disparos_list: list) -> None:
+def draw_shoots(screen: pygame.Surface, shoots_list: list) -> None:
     """
     Dibuja todos los disparos del jugador en la pantalla.
     """
-    for disparo in disparos_list:
-        screen.blit(disparo['imagen'], disparo['rect'])
+    for shoot in shoots_list:
+        screen.blit(shoot['imagen'], shoot['rect'])

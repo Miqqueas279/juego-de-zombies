@@ -1,5 +1,9 @@
 [
     {
+        "nombre": " Ezekiel",
+        "puntaje": 1510
+    },
+    {
         "nombre": "miqueas",
         "puntaje": 1050
     },
@@ -14,9 +18,5 @@
     {
         "nombre": "jol",
         "puntaje": 225
-    },
-    {
-        "nombre": "kol",
-        "puntaje": 200
     }
 ]

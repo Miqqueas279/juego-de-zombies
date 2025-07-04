@@ -1,8 +1,6 @@
 import pygame
 from utils.text import draw_text
 
-# --- Funciones para Botones ---
-
 def create_button(x: int, y: int, width: int, height: int, texto: str, action: str) -> dict:
     """
     Crea un diccionario que representa los datos de un botón.
@@ -17,8 +15,6 @@ def draw_button(screen: pygame.Surface, button: dict, mouse_pos: tuple, button_c
     """
     Dibuja un botón en la pantalla, cambiando de color al pasar el mouse.
     """
-    #pygame.draw.rect(screen, color, button['rect'], border_radius=10)
-
     # Posición para la imagen (alineada a la izquierda del botón)
     icon_x = button['rect'].x + 10
     icon_y = button['rect'].centery - icon_img.get_height() // 2

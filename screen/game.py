@@ -2,59 +2,44 @@ import pygame
 import math
 import json
 import os
-from entities.powerup import crear_powerup, mover_powerups, dibujar_powerups
-from entities.enemy import dibujar_enemigos, generar_enemigo, mover_enemigos, ZOMBIE_FRAME_WIDTH, ZOMBIE_FRAME_HEIGHT # Importar constantes de animación
-from entities.player import actualizar_dash_jugador, dibujar_disparos, dibujar_jugador, disparar_jugador, init_player, mover_disparos, mover_jugador, usar_dash_jugador, PLAYER_FRAME_WIDTH, PLAYER_FRAME_HEIGHT, PLAYER_TOTAL_FRAMES_PER_ROW # Importar constantes de animación del jugador
-from screen.game_over import show_game_over # Asumo que esta función existe en screen/game_over.py
-from utils.collision import detectar_colision_rect # Importar funciones auxiliares desde el módulo correcto
+from entities.powerup import create_powerup, move_powerups, draw_powerups
+from entities.enemy import draw_enemies, create_enemy, move_enemies, ZOMBIE_FRAME_WIDTH, ZOMBIE_FRAME_HEIGHT # Importar constantes de animación
+from entities.player import update_player_dash, draw_shoots, draw_player, shoot_player, init_player, move_shoots, move_player, use_player_dash, PLAYER_FRAME_WIDTH, PLAYER_FRAME_HEIGHT, PLAYER_TOTAL_FRAMES_PER_ROW # Importar constantes de animación del jugador
+from screen.game_over import show_game_over
+from utils.collision import detectar_colision_rect
 from utils.image import get_image_from_spritesheet, load_image
 from utils.soundtrack import play_music, load_sound
 from utils.text import draw_text
 
-# --- Constantes del Juego ---
-GREEN = (0, 255, 0)
-
-VIDAS_INICIALES = 3
-VIDAS_MAXIMAS = 5
-COLOR_CORAZON_PERDIDO = (50, 50, 50, 150) 
+MAX_HEALTH = 5
+LOST_HEALTH_COLOR = (50, 50, 50, 150) 
 # Frecuencia de generación de enemigos
-COOLDOWN_GENERACION_ENEMIGO_FRAMES = 60 # Aproximadamente 1 enemigo por segundo a 60 FPS
+COOLDOWN_GENERATION_ENEMY_FRAMES = 60 # Aproximadamente 1 enemigo por segundo a 60 FPS
 
 # Rutas de imágenes
 # Obtener el directorio base del script actual
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-# Cargamos la spritesheet completa 'icons.png'
-SPRITESHEET_ICONS_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'icons.png') 
-
-# Rutas de las spritesheets de zombies
-ZOMBIE_NORMAL_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zombie1.PNG') # Zombie normal
-ZOMBIE_BOOSTED_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zombie2.PNG') # Zombie boosted
-ZOMBIE_KAMIKAZE_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'zombie3.PNG') # Zombie kamikaze
-
-# Ruta de la spritesheet del jugador
-PLAYER_SPRITESHEET_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'prota1.PNG') 
-
 
 # --- Funciones de Manejo de Entidades ---
-def limpiar_entidades_fuera_pantalla(enemigos_list: list, disparos_list: list, powerups_list: list, ANCHO_PANTALLA: int) -> None:
+def clean_off_screen_entities(enemy_list: list, shoot_list: list, powerups_list: list, screen_width: int) -> None:
     """
     Elimina enemigos, disparos y power-ups que han salido de la pantalla en un juego horizontal.
     Iteramos hacia atrás para poder eliminar elementos de la lista sin problemas de índice.
     """
     # Limpiar enemigos (que se mueven de derecha a izquierda)
-    i = len(enemigos_list) - 1
+    i = len(enemy_list) - 1
     while i >= 0:
         # Si el enemigo ha salido completamente por la izquierda
-        if enemigos_list[i]['rect'].right < 0:
-            del enemigos_list[i]
+        if enemy_list[i]['rect'].right < 0:
+            del enemy_list[i]
         i -= 1
     
     # Limpiar disparos (del jugador, que van hacia la derecha)
-    i = len(disparos_list) - 1
+    i = len(shoot_list) - 1
     while i >= 0:
         # Si el disparo ha salido completamente por la derecha
-        if disparos_list[i]['rect'].left > ANCHO_PANTALLA:
-            del disparos_list[i]
+        if shoot_list[i]['rect'].left > screen_width:
+            del shoot_list[i]
         i -= 1
     
     # Limpiar power-ups (que se mueven de derecha a izquierda y ya no están activos)
@@ -68,7 +53,7 @@ def limpiar_entidades_fuera_pantalla(enemigos_list: list, disparos_list: list, p
     powerups_list[:] = temp_powerups_list # Esto modifica la lista original en su lugar
 
 
-def manejar_colisiones(player_data, enemigos_list, player_bullets_list, lost_health_sound: pygame.mixer.Sound | None, player_impact_sound: pygame.mixer.Sound | None, enemy_impact_sound: pygame.mixer.Sound | None):
+def handler_collisions(player_data, enemies_list, player_bullets_list, lost_health_sound: pygame.mixer.Sound | None, player_impact_sound: pygame.mixer.Sound | None, enemy_impact_sound: pygame.mixer.Sound | None) -> bool:
     """
     Detecta colisiones entre jugador, enemigos y balas.
     Devuelve True si el jugador pierde todas las vidas.
@@ -77,32 +62,32 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list, lost_hea
     i = len(player_bullets_list) - 1
     while i >= 0:
         bullet = player_bullets_list[i]
-        j = len(enemigos_list) - 1
+        j = len(enemies_list) - 1
         while j >= 0:
-            enemy = enemigos_list[j]
+            enemy = enemies_list[j]
             if detectar_colision_rect(bullet['rect'], enemy['rect']):
                 enemy['vida'] -= 1
                 if enemy_impact_sound:
                     enemy_impact_sound.play()
                 if enemy['vida'] <= 0:
                     player_data['puntos'] += enemy['puntos']
-                    del enemigos_list[j]
+                    del enemies_list[j]
                 del player_bullets_list[i]
                 break
             j -= 1
         i -= 1
 
     # Colisiones enemigos vs jugador
-    i = len(enemigos_list) - 1
+    i = len(enemies_list) - 1
     while i >= 0:
-        enemy = enemigos_list[i]
+        enemy = enemies_list[i]
         if detectar_colision_rect(player_data['rect'], enemy['rect']):
             player_data['vidas'] -= 1
             if player_impact_sound:
                 player_impact_sound.play()
             if lost_health_sound:
                 lost_health_sound.play()
-            del enemigos_list[i]
+            del enemies_list[i]
             print(f"[DEBUG] Vidas restantes: {player_data['vidas']}")
             if player_data['vidas'] <= 0:
                 print("[DEBUG] Jugador sin vidas. Fin del juego.")
@@ -111,7 +96,7 @@ def manejar_colisiones(player_data, enemigos_list, player_bullets_list, lost_hea
 
     return False
 
-def dibujar_vidas_corazones(pantalla: pygame.Surface, vidas_actuales: int, vidas_maximas: int, heart_image_surface: pygame.Surface, lost_heart_color: tuple) -> None:
+def draw_health_bar(screen: pygame.Surface, actual_health: int, max_health: int, heart_image_surface: pygame.Surface, lost_heart_color: tuple) -> None:
     """
     Dibuja corazones llenos y vacíos hasta VIDAS_MAXIMAS.
     """
@@ -119,40 +104,41 @@ def dibujar_vidas_corazones(pantalla: pygame.Surface, vidas_actuales: int, vidas
     y_offset = 40
     spacing = heart_image_surface.get_width() + 5
 
-    for i in range(vidas_maximas): # Iterar hasta VIDAS_MAXIMAS
+    for i in range(max_health): # Iterar hasta VIDAS_MAXIMAS
         x = x_offset + i * spacing
-        if i < vidas_actuales:
-            pantalla.blit(heart_image_surface, (x, y_offset))
+        if i < actual_health:
+            screen.blit(heart_image_surface, (x, y_offset))
         else:
             s = pygame.Surface(heart_image_surface.get_size(), pygame.SRCALPHA)
             s.fill(lost_heart_color)
-            pantalla.blit(s, (x, y_offset))
+            screen.blit(s, (x, y_offset))
 
-
-# --- Bucle Principal del Juego (main_game_loop) ---
-def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA: int, fuente_pequena: pygame.font.Font, NEGRO: tuple, BLANCO: tuple, ROJO: tuple, VERDE: tuple, AZUL: tuple) -> tuple:
+def main_game_loop(screen: pygame.Surface, screen_width: int, screen_height: int, color_black: tuple, color_white: tuple, color_red: tuple, color_green: tuple, color_blue: tuple) -> tuple:
     """
     Gestiona la lógica principal de la partida.
     Retorna el puntaje final y el nombre del jugador si el juego termina.
     """
-    background_image = load_image("floor.jpg", ANCHO_PANTALLA, ALTO_PANTALLA, NEGRO)
-    play_music("game_music.mp3", 0.05)
+    player_spritesheet = load_image("player.png", PLAYER_FRAME_WIDTH * PLAYER_TOTAL_FRAMES_PER_ROW, PLAYER_FRAME_HEIGHT * 4, color_blue)
+    background_image = load_image("floor.jpg", screen_width, screen_height, color_black)
 
     # Cargar la spritesheet del jugador
-    player_spritesheet = load_image("player.png", PLAYER_FRAME_WIDTH * PLAYER_TOTAL_FRAMES_PER_ROW, PLAYER_FRAME_HEIGHT * 4, AZUL)
-
-    powerup_imagenes = {
-        'vida': load_image("powerup_health.png", 30, 30, VERDE),
-        'velocidad': load_image("powerup_speed.png", 30, 30, AZUL)
+    powerup_image = {
+        'vida': load_image("powerup_health.png", 30, 30, color_green),
+        'velocidad': load_image("powerup_speed.png", 30, 30, color_blue)
     }
     
     # Cargar las spritesheets de zombies para cada tipo
     zombie_spritesheets = {
-        "normal": load_image("zombie1.png", ZOMBIE_FRAME_WIDTH * 3, ZOMBIE_FRAME_HEIGHT * 4, ROJO),
-        "boosted": load_image("zombie2.png", ZOMBIE_FRAME_WIDTH * 3, ZOMBIE_FRAME_HEIGHT * 4, VERDE),
-        "kamikaze": load_image("zombie3.png", ZOMBIE_FRAME_WIDTH * 3, ZOMBIE_FRAME_HEIGHT * 4, BLANCO)
+        "normal": load_image("zombie1.png", ZOMBIE_FRAME_WIDTH * 3, ZOMBIE_FRAME_HEIGHT * 4, color_red),
+        "boosted": load_image("zombie2.png", ZOMBIE_FRAME_WIDTH * 3, ZOMBIE_FRAME_HEIGHT * 4, color_green),
+        "kamikaze": load_image("zombie3.png", ZOMBIE_FRAME_WIDTH * 3, ZOMBIE_FRAME_HEIGHT * 4, color_white)
     }# Asumiendo 3x4 frames por spritesheet
         
+    spritesheet_icons = load_image("icons.png", 256, 256, color_red, True)
+    heart_surface_local = get_image_from_spritesheet(spritesheet_icons, (52, 0, 9, 9), (30, 30))
+
+    bullet_image = load_image("bullet.png", 10, 7, (255,255,255))
+
     shoot_sound = load_sound("player_shoot.mp3", 0.1)
     recover_health_sound = load_sound("recover_health.mp3", 0.4)
     lost_health_sound = load_sound("lost_health.mp3", 0.4)
@@ -160,26 +146,22 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
     player_impact_sound = load_sound("player_impact.mp3", 0.3)
     enemy_impact_sound = load_sound("enemy_impact.mp3", 0.1)
 
-    spritesheet_icons = load_image("icons.png", 256, 256, ROJO, True)
-    heart_surface_local = get_image_from_spritesheet(spritesheet_icons, (52, 0, 9, 9), (30, 30))
+    play_music("game_music.mp3", 0.05)
 
-    bullet_image = load_image("bullet.png", 10, 7, (255,255,255))
-
-    reloj = pygame.time.Clock()
+    clock = pygame.time.Clock()
     fps = 60 # Definir FPS aquí o cargar desde config.json
 
     # Inicializar datos del jugador
-    player = init_player(ANCHO_PANTALLA, ALTO_PANTALLA)
+    player = init_player(screen_height)
     
     # Listas para guardar enemigos y disparos
-    enemigos = []
+    enemies = []
     player_bullets = []
     powerups = [] # Lista para los power-ups
 
-    frames_desde_ultima_generacion_enemigo = 0 # Contador para la generación de enemigos
-    frames_para_nuevo_powerup = 0
-    POWERUP_INTERVALO_FRAMES = 600  # cada 10 segundos (60 FPS * 10)
-
+    frames_from_last_enemy_generation = 0 # Contador para la generación de enemigos
+    frames_for_new_powerup = 0
+    powerup_range_frames = 600  # cada 10 segundos (60 FPS * 10)
 
     running = True
     while running:
@@ -193,39 +175,39 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     # Intentar disparar y añadir el nuevo disparo a la lista
-                    nuevo_disparo = disparar_jugador(player, current_frames, bullet_image)
-                    if nuevo_disparo:
+                    new_shoot = shoot_player(player, current_frames, bullet_image)
+                    if new_shoot:
                         if shoot_sound:
                             shoot_sound.play()
-                        player_bullets.append(nuevo_disparo)
+                        player_bullets.append(new_shoot)
                 if event.key == pygame.K_z: # Tecla para el dash
-                    usar_dash_jugador(player)
+                    use_player_dash(player)
 
         # --- Movimiento del Jugador ---
         keys = pygame.key.get_pressed()
-        mover_jugador(player, keys, ALTO_PANTALLA)
-        actualizar_dash_jugador(player) # Actualizar el temporizador del dash
+        move_player(player, keys, screen_height)
+        update_player_dash(player) # Actualizar el temporizador del dash
 
         # --- Generación de Power-ups ---
-        frames_para_nuevo_powerup += 1
-        if frames_para_nuevo_powerup >= POWERUP_INTERVALO_FRAMES:
-            powerups.append(crear_powerup(ANCHO_PANTALLA, ALTO_PANTALLA))
-            frames_para_nuevo_powerup = 0
+        frames_for_new_powerup += 1
+        if frames_for_new_powerup >= powerup_range_frames:
+            powerups.append(create_powerup(screen_width, screen_height))
+            frames_for_new_powerup = 0
         
         # --- Generación de Enemigos ---
-        frames_desde_ultima_generacion_enemigo += 1
-        if frames_desde_ultima_generacion_enemigo >= COOLDOWN_GENERACION_ENEMIGO_FRAMES:
-            enemigos.append(generar_enemigo(ANCHO_PANTALLA, ALTO_PANTALLA))
-            frames_desde_ultima_generacion_enemigo = 0 # Reiniciar el contador
+        frames_from_last_enemy_generation += 1
+        if frames_from_last_enemy_generation >= COOLDOWN_GENERATION_ENEMY_FRAMES:
+            enemies.append(create_enemy(screen_width, screen_height))
+            frames_from_last_enemy_generation = 0 # Reiniciar el contador
 
         # --- Movimiento de Entidades ---
-        mover_enemigos(enemigos, player)
-        mover_disparos(player_bullets)
-        mover_powerups(powerups) # Mover los power-ups
+        move_enemies(enemies)
+        move_shoots(player_bullets)
+        move_powerups(powerups) # Mover los power-ups
 
         # --- Colisiones ---
         # Manejar colisiones entre jugador/enemigos/disparos
-        game_over = manejar_colisiones(player, enemigos, player_bullets, lost_health_sound, player_impact_sound, enemy_impact_sound)
+        game_over = handler_collisions(player, enemies, player_bullets, lost_health_sound, player_impact_sound, enemy_impact_sound)
         if game_over:
             running = False # Si el jugador pierde todas las vidas, terminar el juego
 
@@ -233,7 +215,7 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
         for i in range(len(powerups) - 1, -1, -1):
             powerup = powerups[i]
             if player['rect'].colliderect(powerup['rect']):
-                if powerup['tipo'] == 'vida' and player['vidas'] < VIDAS_MAXIMAS:
+                if powerup['tipo'] == 'vida' and player['vidas'] < MAX_HEALTH:
                     player['vidas'] += 1
                     if recover_health_sound:
                         recover_health_sound.play()
@@ -245,42 +227,40 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
 
 
         # --- Eliminar elementos fuera de pantalla ---
-        # Ahora pasamos la lista de power-ups también
-        limpiar_entidades_fuera_pantalla(enemigos, player_bullets, powerups, ANCHO_PANTALLA)
-
+        clean_off_screen_entities(enemies, player_bullets, powerups, screen_width)
 
         # --- Dibujar ---
-        pantalla.blit(background_image, (0, 0))
+        screen.blit(background_image, (0, 0))
 
         # Ahora pasamos la spritesheet del jugador a dibujar_jugador
-        dibujar_jugador(pantalla, player, player_spritesheet, AZUL, BLANCO) 
+        draw_player(screen, player, player_spritesheet, color_white) 
         # Ahora pasamos el diccionario de spritesheets de zombies a dibujar_enemigos
-        dibujar_enemigos(pantalla, enemigos, zombie_spritesheets) 
-        dibujar_disparos(pantalla, player_bullets) # Dibujar todos los disparos del jugador
-        dibujar_powerups(pantalla, powerups, powerup_imagenes) # Dibujar los power-ups
+        draw_enemies(screen, enemies, zombie_spritesheets) 
+        draw_shoots(screen, player_bullets) # Dibujar todos los disparos del jugador
+        draw_powerups(screen, powerups, powerup_image) # Dibujar los power-ups
 
         # Dibujar UI (vidas y puntaje)
         # Ajustar posición del puntaje para el layout horizontal
-        draw_text(pantalla, f"Puntaje: {player['puntos']}\n", 15, 20, 24, BLANCO, "left") # Agregué un salto de línea para separar del dash CD
-        dibujar_vidas_corazones(pantalla, player['vidas'], VIDAS_MAXIMAS, heart_surface_local, COLOR_CORAZON_PERDIDO) # Pasar VIDAS_MAXIMAS
+        draw_text(screen, f"Puntaje: {player['puntos']}\n", 15, 20, 24, color_white, "left") # Agregué un salto de línea para separar del dash CD
+        draw_health_bar(screen, player['vidas'], MAX_HEALTH, heart_surface_local, LOST_HEALTH_COLOR) # Pasar VIDAS_MAXIMAS
         
         # Mostrar el estado del dash cooldown
         if player['dash_cooldown_timer'] > 0:
             tiempo_restante_dash = math.ceil(player['dash_cooldown_timer'] / fps)
-            draw_text(pantalla, f"Dash CD: {tiempo_restante_dash}s", ANCHO_PANTALLA - 110, 20, 24, ROJO, "left")
+            draw_text(screen, f"Dash CD: {tiempo_restante_dash}s", screen_width - 110, 20, 24, color_red, "left")
         elif not player['en_dash']:
-            draw_text(pantalla, "Dash Listo", ANCHO_PANTALLA - 110, 20, 24, VERDE, "left")
+            draw_text(screen, "Dash Listo", screen_width - 110, 20, 24, color_green, "left")
 
         # Se eliminó la duplicación de dibujar_powerups y la list comprehension aquí.
         
         pygame.display.flip() # Actualizar toda la pantalla
         
-        reloj.tick(fps) # Controlar los FPS del juego
+        clock.tick(fps) # Controlar los FPS del juego
 
     #Lectura de archivo config temporal
     with open(os.path.join(BASE_DIR, "config.json"), "r", encoding="utf-8") as file: # Usar os.path.join para la ruta
         config = json.load(file)
 
-    puntos, nombre = show_game_over(pantalla, config["screen"], config["font_size"], config["colors"], player)
+    puntos, nombre = show_game_over(screen, config["screen"], config["font_size"], config["colors"], player)
 
     return puntos, nombre
