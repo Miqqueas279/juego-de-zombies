@@ -1,4 +1,5 @@
 import pygame
+from utils.image import load_image
 from utils.soundtrack import play_music, stop_music
 from utils.text import draw_text
 
@@ -6,8 +7,7 @@ def show_credits(screen: pygame.Surface, screen_size: dict, font_size: dict, col
 
     play_music("credits_music.mp3", 0.05)
 
-    background_img = pygame.image.load("assets\\image\\credits_background.jpg").convert()
-    background_img = pygame.transform.scale(background_img, (screen_size["width"], screen_size["height"]))
+    background_image = load_image("credits_background.jpg", screen_size["width"], screen_size["height"], colors["black"])
 
     running = True
     while running:
@@ -18,7 +18,7 @@ def show_credits(screen: pygame.Surface, screen_size: dict, font_size: dict, col
                 if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
                     running = False
 
-        screen.blit(background_img, (0, 0))
+        screen.blit(background_image, (0, 0))
 
         draw_text(screen, "Créditos", screen_size["width"] // 2, screen_size["height"] // 2 - 200, font_size["large"], colors["orange"], "center")
         

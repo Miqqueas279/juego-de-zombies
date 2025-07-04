@@ -1,8 +1,8 @@
 import pygame
+from utils.image import load_image
 from utils.list import sort_list
 from utils.text import draw_text
 
-# --- Pantalla de Ranking ---
 def show_ranking(screen: pygame.Surface, screen_size: dict, font_size: dict, colors: dict, scores: list) -> None:
     """
     Muestra el ranking de los mejores puntajes.
@@ -10,8 +10,7 @@ def show_ranking(screen: pygame.Surface, screen_size: dict, font_size: dict, col
     width = screen_size["width"]
     height = screen_size["height"]
 
-    background_img = pygame.image.load("assets\\image\\background.jpg").convert()
-    background_img = pygame.transform.scale(background_img, (width, height))
+    background_image = load_image("background.jpg", width, height, colors["black"])
 
     running = True
     while running:
@@ -22,9 +21,8 @@ def show_ranking(screen: pygame.Surface, screen_size: dict, font_size: dict, col
                 if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
                     running = False # Volver al menú principal
 
-        screen.blit(background_img, (0, 0))
+        screen.blit(background_image, (0, 0))
 
-        # Título del Ranking
         draw_text(screen, "Ranking", width // 2, height // 4 - 50, font_size["large"], colors["orange"], "center")
 
         # Mostrar los puntajes

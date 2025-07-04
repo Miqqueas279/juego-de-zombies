@@ -1,23 +1,19 @@
 import pygame
 from utils.button import create_button, draw_button, is_button_clicked
+from utils.image import load_image
 from utils.soundtrack import load_sound, play_music
 
 # --- Menú Principal ---
-def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pygame.font.Font, button_color: tuple, button_hover: tuple) -> str:
+def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pygame.font.Font, colors: dict) -> str:
     """
     Muestra el menú principal y maneja la interacción con los botones.
     Retorna la acción seleccionada ('jugar', 'ranking', 'creditos', 'salir').
     """
     play_music("menu_music.ogg", 0.05)
 
-    title_img = pygame.image.load("assets\\image\\title.png").convert_alpha()
-    title_img = pygame.transform.scale(title_img, (400, 100))
-
-    background_img = pygame.image.load("assets\\image\\background.jpg").convert()
-    background_img = pygame.transform.scale(background_img, (width, height))
-
-    icon_img = pygame.image.load("assets\\image\\weapon.png").convert_alpha()
-    icon_img = pygame.transform.scale(icon_img, (30, 30))
+    title_image = load_image("title.png", 400, 100, colors["white"])
+    background_image = load_image("background.jpg", width, height, colors["black"])
+    icon_image = load_image("weapon.png", 30, 30, colors["white"])
 
     sound_click = load_sound("shoot.mp3", 0.1)
     sound_hover = load_sound("selection.mp3", 0.1)
@@ -56,14 +52,14 @@ def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pyga
                             pygame.time.delay(500)  # Espera breve para oír el sound
                             return button['action'] # Retornar la acción del botón seleccionado
 
-        screen.blit(background_img, (0, 0))
+        screen.blit(background_image, (0, 0))
 
-        title_rect = title_img.get_rect(center=(width // 2, int(height * 0.20)))
-        screen.blit(title_img, title_rect)
+        title_rect = title_image.get_rect(center=(width // 2, int(height * 0.20)))
+        screen.blit(title_image, title_rect)
 
         # Dibujar todos los botones
         for button in buttons:
-            draw_button(screen, button, mouse_pos, button_color, button_hover, button_font, icon_img)
+            draw_button(screen, button, mouse_pos, colors["white"], colors["orange"], button_font, icon_image)
 
         pygame.display.flip() # Actualizar la pantalla
     

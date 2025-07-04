@@ -1,12 +1,12 @@
 import pygame
+from utils.image import load_image
 from utils.text import draw_text
 
 def show_game_over(screen: pygame.Surface, screen_size: dict, font_size: dict, colors: dict, player: dict) -> tuple:
     name = ""
     input_active = True
     
-    background_img = pygame.image.load("assets\\image\\background.jpg").convert()
-    background_img = pygame.transform.scale(background_img, (screen_size["width"], screen_size["height"]))
+    background_image = load_image("background.jpg", screen_size["width"], screen_size["height"], colors["black"])
 
     while input_active:
         for event in pygame.event.get():
@@ -21,7 +21,7 @@ def show_game_over(screen: pygame.Surface, screen_size: dict, font_size: dict, c
                     # Añadir el carácter presionado al nombre
                     name += event.unicode
 
-        screen.blit(background_img, (0, 0))
+        screen.blit(background_image, (0, 0))
 
         draw_text(screen, "GAME OVER", screen_size["width"] // 2, screen_size["height"] // 2 - 50, font_size["large"], colors["red"], "center")
         draw_text(screen, f"Puntaje Final: {player['puntos']}", screen_size["width"] // 2, screen_size["height"] // 2 + 20, font_size["small"], colors["white"], "center")

@@ -1,15 +1,15 @@
 import pygame
 import math
 import json
-import os # Importar os para manejar rutas de archivos
-from entities.powerup import crear_powerup, mover_powerups, dibujar_powerups, recoger_powerups
-
+import os
+from entities.powerup import crear_powerup, mover_powerups, dibujar_powerups
 from entities.enemy import dibujar_enemigos, generar_enemigo, mover_enemigos, ZOMBIE_FRAME_WIDTH, ZOMBIE_FRAME_HEIGHT # Importar constantes de animación
 from entities.player import actualizar_dash_jugador, dibujar_disparos, dibujar_jugador, disparar_jugador, init_player, mover_disparos, mover_jugador, usar_dash_jugador, PLAYER_FRAME_WIDTH, PLAYER_FRAME_HEIGHT, PLAYER_TOTAL_FRAMES_PER_ROW # Importar constantes de animación del jugador
 from screen.game_over import show_game_over # Asumo que esta función existe en screen/game_over.py
 from utils.collision import detectar_colision_rect # Importar funciones auxiliares desde el módulo correcto
+from utils.image import get_image_from_spritesheet, load_image
 from utils.soundtrack import play_music, load_sound
-from utils.text import draw_text, get_font
+from utils.text import draw_text
 
 # --- Constantes del Juego ---
 GREEN = (0, 255, 0)
@@ -135,31 +135,23 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
     Gestiona la lógica principal de la partida.
     Retorna el puntaje final y el nombre del jugador si el juego termina.
     """
-    FONDO_PATH = os.path.join(BASE_DIR, 'assets', 'image', 'floor.jpg')
-    fondo_surface = pygame.image.load(FONDO_PATH).convert()
-    fondo_surface = pygame.transform.scale(fondo_surface, (ANCHO_PANTALLA, ALTO_PANTALLA))
-
+    background_image = load_image("floor.jpg", ANCHO_PANTALLA, ALTO_PANTALLA, NEGRO)
     play_music("game_music.mp3", 0.05)
 
     # Cargar la spritesheet del jugador
-    player_spritesheet = pygame.image.load(PLAYER_SPRITESHEET_PATH).convert_alpha()
-    player_spritesheet = pygame.transform.scale(player_spritesheet, (PLAYER_FRAME_WIDTH * PLAYER_TOTAL_FRAMES_PER_ROW, PLAYER_FRAME_HEIGHT * 4)) 
+    player_spritesheet = load_image("player.png", PLAYER_FRAME_WIDTH * PLAYER_TOTAL_FRAMES_PER_ROW, PLAYER_FRAME_HEIGHT * 4, AZUL)
 
     powerup_imagenes = {
-        'vida': pygame.transform.scale(pygame.image.load(os.path.join(BASE_DIR, 'assets', 'image', 'powerup_vida.png')), (30, 30)),
-        'velocidad': pygame.transform.scale(pygame.image.load(os.path.join(BASE_DIR, 'assets', 'image', 'powerup_velocidad.png')), (30, 30))
+        'vida': load_image("powerup_health.png", 30, 30, VERDE),
+        'velocidad': load_image("powerup_speed.png", 30, 30, AZUL)
     }
     
     # Cargar las spritesheets de zombies para cada tipo
     zombie_spritesheets = {
-        "normal": pygame.image.load(ZOMBIE_NORMAL_SPRITESHEET_PATH).convert_alpha(),
-        "boosted": pygame.image.load(ZOMBIE_BOOSTED_SPRITESHEET_PATH).convert_alpha(),
-        "kamikaze": pygame.image.load(ZOMBIE_KAMIKAZE_SPRITESHEET_PATH).convert_alpha()
-    }
-
-    for tipo in zombie_spritesheets:
-        zombie_spritesheets[tipo] = pygame.transform.scale(zombie_spritesheets[tipo], 
-                                                           (ZOMBIE_FRAME_WIDTH * 3, ZOMBIE_FRAME_HEIGHT * 4)) # Asumiendo 3x4 frames por spritesheet
+        "normal": load_image("zombie1.png", ZOMBIE_FRAME_WIDTH * 3, ZOMBIE_FRAME_HEIGHT * 4, ROJO),
+        "boosted": load_image("zombie2.png", ZOMBIE_FRAME_WIDTH * 3, ZOMBIE_FRAME_HEIGHT * 4, VERDE),
+        "kamikaze": load_image("zombie3.png", ZOMBIE_FRAME_WIDTH * 3, ZOMBIE_FRAME_HEIGHT * 4, BLANCO)
+    }# Asumiendo 3x4 frames por spritesheet
         
     shoot_sound = load_sound("player_shoot.mp3", 0.1)
     recover_health_sound = load_sound("recover_health.mp3", 0.4)
@@ -168,19 +160,10 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
     player_impact_sound = load_sound("player_impact.mp3", 0.3)
     enemy_impact_sound = load_sound("enemy_impact.mp3", 0.1)
 
-    # Cargar y procesar la imagen del corazón una vez 
-    spritesheet_icons = pygame.image.load(SPRITESHEET_ICONS_PATH).convert_alpha() 
+    spritesheet_icons = load_image("icons.png", 256, 256, ROJO, True)
+    heart_surface_local = get_image_from_spritesheet(spritesheet_icons, (52, 0, 9, 9), (30, 30))
 
-    # Definir el rectángulo del corazón lleno en la spritesheet (x, y, ancho, alto)
-    HEART_SPRITE_RECT_SOURCE = pygame.Rect(52, 0, 9, 9) 
-
-    # Extraer el corazón lleno
-    heart_surface_local = spritesheet_icons.subsurface(HEART_SPRITE_RECT_SOURCE) 
-    
-    # Escalar el corazón para que sea más visible
-    SCALE_SIZE = (30, 30) # Tamaño deseado para los corazones en pantalla
-    heart_surface_local = pygame.transform.scale(heart_surface_local, SCALE_SIZE)
-
+    bullet_image = load_image("bullet.png", 10, 7, (255,255,255))
 
     reloj = pygame.time.Clock()
     fps = 60 # Definir FPS aquí o cargar desde config.json
@@ -210,7 +193,7 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     # Intentar disparar y añadir el nuevo disparo a la lista
-                    nuevo_disparo = disparar_jugador(player, current_frames)
+                    nuevo_disparo = disparar_jugador(player, current_frames, bullet_image)
                     if nuevo_disparo:
                         if shoot_sound:
                             shoot_sound.play()
@@ -267,7 +250,7 @@ def main_game_loop(pantalla: pygame.Surface, ANCHO_PANTALLA: int, ALTO_PANTALLA:
 
 
         # --- Dibujar ---
-        pantalla.blit(fondo_surface, (0, 0))
+        pantalla.blit(background_image, (0, 0))
 
         # Ahora pasamos la spritesheet del jugador a dibujar_jugador
         dibujar_jugador(pantalla, player, player_spritesheet, AZUL, BLANCO) 
