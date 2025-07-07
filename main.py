@@ -39,7 +39,9 @@ def main():
     screen = pygame.display.set_mode((config["screen"]["width"], config["screen"]["height"]))
     pygame.display.set_caption("Cielo Letal") # Título de la ventana del juego
 
-    while True:
+    running_main = True
+
+    while running_main:
         # Mostrar el menú principal y obtener la opción seleccionada
         # Pasamos todas las variables de configuración necesarias
         option = main_menu(screen, config["screen"]["width"], config["screen"]["height"], FONT_MEDIUM, config["colors"])
@@ -64,8 +66,10 @@ def main():
             stop_music()
             show_credits(screen, config["screen"], config["font_size"], config["colors"])
         elif option == "salir":
-            pygame.quit()
-            sys.exit()
+            running_main = False
+        
+        pygame.quit()
+        sys.exit()
 
 if __name__ == "__main__":
     main()
