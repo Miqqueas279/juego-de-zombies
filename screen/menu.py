@@ -2,6 +2,7 @@ import pygame
 from utils.button import create_button, draw_button, is_button_clicked
 from utils.image import load_image
 from utils.soundtrack import load_sound, play_music
+from story import show_intro_story  # <-- IMPORTAR LA HISTORIA
 
 # --- Menú Principal ---
 def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pygame.font.Font, colors: dict) -> str:
@@ -19,7 +20,7 @@ def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pyga
     sound_hover = load_sound("selection.mp3", 0.1)
     buttons_hover_prev = set()
 
-    # Lista de diccionarios de botones
+    # Lista de botones
     buttons = [
         create_button(width // 2 - 100, height // 2 - 80, 200, 60, "Jugar", "jugar"),
         create_button(width // 2 - 100, height // 2, 200, 60, "Ranking", "ranking"),
@@ -29,7 +30,7 @@ def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pyga
 
     running = True
     while running:
-        mouse_pos = pygame.mouse.get_pos() # Obtener la posición actual del mouse
+        mouse_pos = pygame.mouse.get_pos()
 
         for button in buttons:
             if button['rect'].collidepoint(mouse_pos):
@@ -42,25 +43,28 @@ def main_menu(screen: pygame.Surface, width: int, height: int, button_font: pyga
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return "salir" # Si el usuario cierra la ventana, salir del juego
+                return "salir"
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1: # Click izquierdo del mouse
+                if event.button == 1:
                     for button in buttons:
                         if is_button_clicked(button, mouse_pos):
                             if sound_click:
                                 sound_click.play()
-                            pygame.time.delay(500)  # Espera breve para oír el sound
-                            return button['action'] # Retornar la acción del botón seleccionado
+                            pygame.time.delay(500)
+
+                            if button['action'] == "jugar":
+                                show_intro_story(screen, width, height, button_font, colors)  # 🎬 Mostrar historia
+
+                            return button['action']
 
         screen.blit(background_image, (0, 0))
 
         title_rect = title_image.get_rect(center=(width // 2, int(height * 0.20)))
         screen.blit(title_image, title_rect)
 
-        # Dibujar todos los botones
         for button in buttons:
             draw_button(screen, button, mouse_pos, colors["white"], colors["orange"], button_font, icon_image)
 
-        pygame.display.flip() # Actualizar la pantalla
-    
+        pygame.display.flip()
+
     return "salir"
