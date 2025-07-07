@@ -6,12 +6,13 @@ En construcción
 
 ## 🖼️ Capturas de pantalla
 ![Menú](https://imgur.com/jvZmRPv.jpg)
-![Juego](https://imgur.com/v18gTrM.jpg)
-![Fin del juego](https://imgur.com/sLA9L5F.jpg)
+![Juego](https://imgur.com/a/hkik1xn)
+![Fin del juego](https://imgur.com/tACmbA4)
 
 ## 🚀 Cómo jugar
-- Usá las teclas **← →** para moverte.
+- Usá las teclas **🠉🠋** para moverte.
 - Presioná **ESPACIO** para disparar.
+- Presiona **Z** para un boost de movimiento.
 - Eliminá enemigos y esquivá sus ataques.
 - ¡Sobreviví lo máximo posible!
 
