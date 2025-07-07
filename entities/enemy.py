@@ -1,5 +1,6 @@
-import pygame
 import random
+
+import pygame
 
 BASE_ENEMY_SPEED = 2
 # Probabilidades de tipos de enemigos

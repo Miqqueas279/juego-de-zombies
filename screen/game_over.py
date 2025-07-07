@@ -1,11 +1,12 @@
 import pygame
+
 from utils.image import load_image
 from utils.text import draw_text
 
 def show_game_over(screen: pygame.Surface, screen_size: dict, font_size: dict, colors: dict, player: dict) -> tuple:
     """
     Muestra la pantalla de "Game Over" y permite al jugador ingresar su nombre.
-      """
+    """
     name = ""
     input_active = True
     

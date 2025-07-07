@@ -1,4 +1,5 @@
 import pygame
+
 from utils.image import load_image
 from utils.soundtrack import play_music, stop_music
 from utils.text import draw_text

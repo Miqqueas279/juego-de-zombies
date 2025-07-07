@@ -1,6 +1,8 @@
-import pygame
 import sys
 import json
+
+import pygame
+
 from screen.credits import show_credits
 from screen.game import main_game_loop
 from screen.menu import main_menu

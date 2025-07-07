@@ -1,4 +1,5 @@
 import os
+
 import pygame
 
 def play_music(music_name: str, volume: float) -> None:

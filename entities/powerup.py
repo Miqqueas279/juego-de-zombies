@@ -1,5 +1,6 @@
-import pygame
 import random
+
+import pygame
 
 def create_powerup(screen_width: int, scree_height: int) -> dict:
 

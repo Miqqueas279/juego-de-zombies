@@ -1,4 +1,5 @@
 import os
+
 import pygame
 
 def load_image(image_name: str, width: int, height: int, color: tuple, is_spritesheet: bool = False) -> pygame.Surface:

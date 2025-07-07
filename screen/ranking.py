@@ -1,4 +1,5 @@
 import pygame
+
 from utils.image import load_image
 from utils.list import sort_list
 from utils.text import draw_text
