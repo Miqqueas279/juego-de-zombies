@@ -6,8 +6,8 @@ En construcción
 
 ## 🖼️ Capturas de pantalla
 ![Menú](https://imgur.com/jvZmRPv.jpg)
-![Juego](https://imgur.com/a/hkik1xn)
-![Fin del juego](https://imgur.com/tACmbA4)
+![Juego](https://imgur.com/a/hkik1xn.jpg)
+![Fin del juego](https://imgur.com/tACmbA4.jpg)
 
 ## 🚀 Cómo jugar
 - Usá las teclas **🠉🠋** para moverte.
