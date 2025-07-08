@@ -131,11 +131,8 @@ def draw_player(screen: pygame.Surface, player_data: dict, player_spritesheet: p
     # 5. Extraer el frame actual de la spritesheet
     current_frame_image = player_spritesheet.subsurface(frame_rect)
 
-    # Escalar la imagen del frame para que coincida con el tamaño del rect del jugador (si es necesario)
-    scaled_frame_image = pygame.transform.scale(current_frame_image, (player_data['rect'].width, player_data['rect'].height))
-
     # 6. Dibujar el frame actual en la posición del jugador
-    screen.blit(scaled_frame_image, player_data['rect'])
+    screen.blit(current_frame_image, player_data['rect'])
 
     if player_data['en_dash']:
         pygame.draw.rect(screen, color_white, player_data['rect'].inflate(10, 10), 2, border_radius=5)
