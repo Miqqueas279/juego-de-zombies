@@ -27,7 +27,7 @@ def show_ranking(screen: pygame.Surface, screen_size: dict, font_size: dict, col
         draw_text(screen, "Ranking", width // 2, height // 4 - 50, font_size["large"], colors["orange"], "center")
 
         if not scores:
-            draw_text(screen, "No hay puntajes aún.", height // 2, height // 3, font_size["medium"], colors["white"], "center")
+            draw_text(screen, "No hay puntajes aún.", width // 2, height // 3, font_size["medium"], colors["white"], "center")
         else:
             draw_scores(screen, width, height // 3, font_size, colors, scores)
 
