@@ -5,6 +5,10 @@ from utils.soundtrack import play_music, stop_music
 from utils.text import draw_text
 
 def show_credits(screen: pygame.Surface, screen_size: dict, font_size: dict, colors: dict):
+    """
+    Crea un texto con ambiente (musica y fondo) y crea un bucle con event para que pueda
+    ingresar y/o salir el usuario si asi lo desea.
+    """
 
     play_music("credits_music.mp3", 0.05)
 
