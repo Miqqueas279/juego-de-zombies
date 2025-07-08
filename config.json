@@ -1,5 +1,5 @@
 {
-    "screen": {
+    "screen_size": {
         "width": 800,
         "height": 600
     },
@@ -9,25 +9,47 @@
         "green": [0, 255, 0],
         "grey": [50, 50, 50, 150],
         "orange": [228, 142, 0],
-        "red": [255, 0, 0]
+        "red": [255, 0, 0],
+        "blue": [0, 0, 255]
     },
     "font_size": {
         "large": 74,
         "medium": 50,
         "small": 36
     },
-    "player_health": 3,
-    "player_speed": 5,
-    "shoot_speed": 10,
-    "enemy_speed": 2,
-    "dash_cooldown_ms": 180,
-    "dash_duration_ms": 15,
-    "dash_velocity_multiplier": 2.5,
-    "enemy_generation_cooldown_ms": 60,
-    "prob_boosted": 0.2,
-    "prob_kamikaze": 0.1,
-    "boosted_speed": 1.5,
-    "kamikaze_speed": 3.0,
-    "enemy_health": 1,
-    "score": 10
+    "player": {
+        "base_health": 3,
+        "max_health": 5,
+        "speed": 5,
+        "shoot_speed": 10,
+        "dash_cooldown_ms": 180,
+        "dash_duration_ms": 15,
+        "dash_velocity_multiplier": 2.5,
+        "lost_health_color": [50, 50, 50, 150],
+        "frame_width": 40,
+        "frame_height": 40,
+        "total_frames_per_row": 3,
+        "animation_speed_fps": 5,
+        "animation_row_down": 0,
+        "animation_row_up": 3,
+        "animation_row_idle": 2
+    },
+    "enemy": {
+        "health": 2,
+        "speed": 2,
+        "generation_cooldown_ms": 60,
+        "probability_boosted": 0.2,
+        "probability_kamikaze": 0.1,
+        "speed_boosted": 0.5,
+        "speed_kamikaze": 3.0,
+        "health_kamikaze": 1,
+        "health_boosted": 3,
+        "score_normal": 10,
+        "score_boosted": 15,
+        "score_kamikaze": 25,
+        "frame_width": 40,
+        "frame_height": 40,
+        "total_frames": 3,
+        "animation_speed_fps": 5
+    }
 }

@@ -1,21 +1,19 @@
 import json
 import os
 
-# --- Manejo de puntajes  ---
-
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-SCORES_FILE = os.path.join(BASE_DIR, 'datos', 'puntajes.json')
-
 def load_scores() -> list:
     """
     Carga los puntajes desde el archivo JSON.
     Si el archivo no existe o está vacío, devuelve una lista vacía.
     """
-    if not os.path.exists(SCORES_FILE):
+    score_file_path = os.path.join("score.json")
+
+    if not os.path.exists(score_file_path):
         return []
+    
     # Abrir y cargar el archivo JSON si existe.
-    with open(SCORES_FILE, 'r') as f:
-        scores = json.load(f)
+    with open(score_file_path, 'r') as file:
+        scores = json.load(file)
         # Asegurarse de que scores sea una lista
         # Si no es una lista, retornar una lista vacía para evitar errores
         if not isinstance(scores, list):
@@ -28,6 +26,8 @@ def save_scores(scores):
     y limitados al top 5.
     Crea la carpeta 'datos' si no existe.
     """
+    score_file_path = os.path.join("score.json")
+
     # Ordenar los puntajes de mayor a menor 
     scores_a_ordenar = []
     for s in scores:
@@ -50,8 +50,5 @@ def save_scores(scores):
         else:
             break
 
-    # Crear la carpeta 'datos' si no existe
-    os.makedirs(os.path.dirname(SCORES_FILE), exist_ok=True)
-
-    with open(SCORES_FILE, 'w') as f:
-        json.dump(top_5_scores, f, indent=4) # Guardar como JSON con formato legible
+    with open(score_file_path, 'w') as file:
+        json.dump(top_5_scores, file, indent=4) # Guardar como JSON con formato legible
