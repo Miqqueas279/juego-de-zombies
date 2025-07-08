@@ -2,6 +2,7 @@ import pygame
 from utils.text import draw_text
 from utils.image import load_image
 
+# Líneas de la historia que se mostrarán al inicio del juego
 story_lines = [
     "Eldoria sufre una oscura maldición.",
     "El Rey Theron ha desatado una plaga de zombis.",
@@ -14,7 +15,10 @@ story_lines = [
     "El destino de Eldoria está en tus manos...",
 ]
 
-def show_intro_story(screen, width, height, font, colors):
+def show_intro_story(screen: pygame.Surface, width: int, height: int, font: pygame.font.Font, colors: dict[str, tuple[int, int, int]]) -> None:
+    """
+    Muestra una introducción animada con la historia del juego, línea por línea, con efecto de escritura.
+    """
     background_image = load_image("trono vacio.jpg", width, height, colors["black"])
     clock = pygame.time.Clock()
     gray_color = (150, 150, 150)
