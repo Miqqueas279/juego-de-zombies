@@ -26,7 +26,6 @@ def show_intro_story(screen: pygame.Surface, width: int, height: int, colors: di
 
     y_offset = 100
     spacing = 40
-    running = True
     skip_story = False
 
     for line in story_lines:
