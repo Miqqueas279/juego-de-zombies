@@ -32,7 +32,9 @@ def load_sound(sound_name: str, volume: float) -> pygame.mixer.Sound | None:
     if os.path.exists(sound_path):
         sound = pygame.mixer.Sound(sound_path)
         sound.set_volume(volume)
+
+        return sound
     else:
         print(f"[ERROR] Archivo de sonido no encontrado: {sound_path}") 
 
-    return sound
+        return None
