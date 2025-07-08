@@ -7,6 +7,7 @@ from screen.credits import show_credits
 from screen.game import main_game_loop
 from screen.menu import main_menu
 from screen.ranking import show_ranking
+from utils.image import load_image
 from utils.score import load_scores, save_scores
 from utils.soundtrack import stop_music
 
@@ -22,9 +23,12 @@ def main():
     """
     with open("config.json", "r", encoding="utf-8") as file:
         config = json.load(file)
-
+    
     screen = pygame.display.set_mode((config["screen_size"]["width"], config["screen_size"]["height"]))
     pygame.display.set_caption("Cielo Letal") # Título de la ventana del juego
+    
+    icon = load_image("utn_icon.png", 32, 32, config["colors"]["black"])
+    pygame.display.set_icon(icon)
 
     running_main = True
 
