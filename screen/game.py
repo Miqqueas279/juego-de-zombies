@@ -207,7 +207,7 @@ def main_game_loop(screen: pygame.Surface, screen_size: dict, font_size: dict, c
         for i in range(len(powerups) - 1, -1, -1):
             powerup = powerups[i]
             if player['rect'].colliderect(powerup['rect']):
-                if powerup['tipo'] == 'vida' and player['vidas'] < player["max_health"]:
+                if powerup['tipo'] == 'vida' and player['vidas'] < player_config["max_health"]:
                     player['vidas'] += 1
                     if recover_health_sound:
                         recover_health_sound.play()

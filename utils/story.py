@@ -1,4 +1,5 @@
 import pygame
+
 from utils.text import draw_text
 from utils.image import load_image
 
@@ -15,7 +16,7 @@ story_lines = [
     "El destino de Eldoria está en tus manos...",
 ]
 
-def show_intro_story(screen: pygame.Surface, width: int, height: int, font: pygame.font.Font, colors: dict[str, tuple[int, int, int]]) -> None:
+def show_intro_story(screen: pygame.Surface, width: int, height: int, colors: dict[str, tuple[int, int, int]]) -> None:
     """
     Muestra una introducción animada con la historia del juego, línea por línea, con efecto de escritura.
     """

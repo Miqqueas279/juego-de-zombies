@@ -54,7 +54,7 @@ def main_menu(screen: pygame.Surface, screen_size: dict, font_size: dict, colors
                             pygame.time.delay(500)
 
                             if button['action'] == "jugar":
-                                show_intro_story(screen, screen_size["width"], screen_size["height"], font_size["small"], colors)  # 🎬 Mostrar historia
+                                show_intro_story(screen, screen_size["width"], screen_size["height"], colors)  # 🎬 Mostrar historia
 
                             return button['action']
 
